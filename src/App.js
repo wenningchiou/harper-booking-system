@@ -93,20 +93,21 @@ const HarpersMakeup = () => {
   const [user, setUser] = useState(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-const [isStyleLoaded, setIsStyleLoaded] = useState(false);
-  // 樣式注入
-  // ✨ 自動美化特效：注入樣式與字體 (修正版：防止醜醜畫面閃爍) ✨
+  
+  // 1. 新增：樣式載入狀態
+  const [isStyleLoaded, setIsStyleLoaded] = useState(false);
+
+  // 2. 樣式注入與載入特效 (含安全機制)
   useEffect(() => {
-    // 1. 載入 Google Fonts
+    // A. 載入 Google Fonts
     if (!document.querySelector('link[href*="fonts.googleapis.com"]')) {
       const link = document.createElement("link");
-      link.href =
-        "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap";
+      link.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap";
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
 
-    // 2. 注入韓系質感 CSS
+    // B. 注入 CSS 樣式
     const styleId = "harper-custom-styles";
     if (!document.getElementById(styleId)) {
       const style = document.createElement("style");
@@ -119,7 +120,7 @@ const [isStyleLoaded, setIsStyleLoaded] = useState(false);
                             radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
                             radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
           background-attachment: fixed;
-          margin: 0; /* 確保沒有預設邊距 */
+          margin: 0;
         }
         .font-serif { font-family: 'Playfair Display', serif; }
         .glass-card {
@@ -136,58 +137,78 @@ const [isStyleLoaded, setIsStyleLoaded] = useState(false);
       document.head.appendChild(style);
     }
 
-    // 3. 載入 Tailwind CSS 並監聽載入完成
+    // C. 載入 Tailwind CSS (含強制顯示的安全機制)
+    const showApp = () => setIsStyleLoaded(true);
     if (!document.querySelector('script[src*="tailwindcss"]')) {
       const script = document.createElement("script");
       script.src = "https://cdn.tailwindcss.com";
-      // 重點：等 Tailwind 載入完，才顯示畫面
-      script.onload = () => {
-        setTimeout(() => setIsStyleLoaded(true), 100); //稍微延遲讓樣式生效
-      };
+      script.onload = showApp;
+      script.onerror = showApp; // 就算失敗也要顯示畫面
       document.head.appendChild(script);
     } else {
-      // 如果已經載入過（開發環境重整時），直接顯示
-      setIsStyleLoaded(true);
+      showApp();
     }
+    // 安全閥：1秒後強制顯示，避免白畫面卡死
+    const safetyTimer = setTimeout(showApp, 1000);
 
-    // Firebase 初始化邏輯保持原本的
+    // D. Firebase 初始化
     if (isFirebaseReady) {
-      signInAnonymously(auth)
-        .then(() => console.log("Guest Login"))
-        .catch(console.error);
+      signInAnonymously(auth).catch(console.error);
       onAuthStateChanged(auth, setUser);
     } else {
       setUser({ uid: "demo-user" });
     }
-  }, []);// ⛔️ 防止閃爍：如果樣式還沒好，顯示全白 Loading 畫面
-if (!isStyleLoaded) {
-  return (
-    <div style={{ 
-      height: "100vh", 
-      display: "flex", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      backgroundColor: "#fdfbf7",
-      color: "#8c8680",
-      fontFamily: "serif"
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <h2 style={{ fontSize: "2rem", marginBottom: "10px" }}>Harper's</h2>
-        <p style={{ fontSize: "0.8rem", opacity: 0.6 }}>Loading...</p>
-      </div>
-    </div>
-  );
-}
 
+    return () => clearTimeout(safetyTimer);
+  }, []);
+
+  // 3. 表單送出函式 (定義在組件內部)
+  const handleBookingSubmit = async (data) => {
+    setIsSubmitting(true);
+    if (isFirebaseReady && user) {
+      try {
+        await addDoc(collection(db, "public_appointments"), {
+          ...data,
+          status: "pending",
+          createdAt: serverTimestamp(),
+          deviceUser: user.uid,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      await new Promise((r) => setTimeout(r, 800)); // Demo 延遲
+    }
+    setBookingData(data);
+    setShowModal(true);
+    setIsSubmitting(false);
+  };
+
+  // 4. Loading 畫面 (防止閃爍)
+  if (!isStyleLoaded) {
+    return (
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fdfbf7", color: "#8c8680", fontFamily: "serif" }}>
+        <div style={{ textAlign: "center" }}>
+          <h2 style={{ fontSize: "2rem", marginBottom: "10px" }}>Harper's</h2>
+          <p style={{ fontSize: "0.8rem", opacity: 0.6 }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. 後台模式
   if (isAdminMode) return <AdminDashboard onExit={() => setIsAdminMode(false)} isReady={isFirebaseReady} db={db} />;
 
+  // 6. 前台主畫面
   return (
     <div className="pb-24 min-h-screen relative font-sans text-stone-600">
+      {/* 頂部導航 */}
       <nav className="sticky top-0 z-40 glass-card px-6 py-4 flex justify-between items-center shadow-sm">
         <h1 className="text-xl font-serif font-bold tracking-widest text-[#8c8680] cursor-pointer" onClick={() => setActiveTab("home")}>Harper's</h1>
         <button onClick={() => setIsAdminMode(true)}><Lock size={16} className="text-stone-300 hover:text-[#8c8680]" /></button>
       </nav>
 
+      {/* 內容區塊 */}
       <main className="px-5 pt-6 animate-fade-in max-w-md mx-auto">
         {activeTab === "home" && <HomeSection onChangeTab={setActiveTab} />}
         {activeTab === "services" && <ServiceSection />}
@@ -197,6 +218,7 @@ if (!isStyleLoaded) {
         {activeTab === "booking" && <BookingForm onSubmit={handleBookingSubmit} isSubmitting={isSubmitting} />}
       </main>
 
+      {/* 底部導航 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-6 py-3 pb-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50">
         <div className="flex justify-between items-end text-[10px] font-medium text-stone-400 max-w-md mx-auto">
           <NavBtn icon={Star} label="介紹" active={activeTab === "services"} onClick={() => setActiveTab("services")} />
@@ -211,11 +233,11 @@ if (!isStyleLoaded) {
         </div>
       </div>
 
+      {/* 成功視窗 */}
       {showModal && bookingData && <SuccessModal data={bookingData} onClose={() => { setShowModal(false); setActiveTab("home"); }} />}
     </div>
   );
 };
-
 // --- 子組件 ---
 const NavBtn = ({ icon: Icon, label, active, onClick }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-colors ${active ? "text-[#8c8680]" : "hover:text-stone-500"}`}>
@@ -305,43 +327,173 @@ const PriceSection = () => (
 const FaqSection = () => {
   const [idx, setIdx] = useState(null);
   const faqs = [
-    { q: "一般妝髮和精緻妝髮差在哪？", a: "主要差在細節與完整度。一般適合日常/證件照；精緻適合拍攝/重要活動，且包含假睫毛與飾品貼鑽服務。" },
-    { q: "婚禮／登記可以選一般方案嗎？", a: "不建議。重要場合對持妝度與精緻度要求較高，請選擇專屬的登記或新秘方案。" },
-    { q: "訂金是多少？", a: "每位 NT$500。付款確認後才會保留時段。" },
-    { q: "到府梳化費用？", a: "依地點與時段另行報價車馬費。" },
+    {
+      q: "一般妝髮和精緻妝髮差在哪？",
+      a: (
+        <>
+          兩者主要差別在於妝面的細節處理與完整度。
+          <br />
+          一般妝髮以自然、乾淨為主，適合聚會或不需強烈上鏡的場合；
+          <br />
+          精緻妝髮則會加強底妝細緻度、眼妝層次與整體持妝表現，更適合拍攝、重要活動或希望妝感更完整的需求。
+          <br />
+          <br />
+          <span className="font-bold text-[#9f5f5f]">
+            另外，一般妝髮方案不包含假睫毛及貼鑽、緞帶等妝面飾品。
+            <br />
+            若有假睫毛或妝面飾品的需求，請選擇精緻妝髮方案唷 🤍
+          </span>
+        </>
+      ),
+    },
+    {
+      q: "婚禮／結婚登記可以選一般妝髮方案嗎？",
+      a: (
+        <>
+          <span className="font-bold text-[#9f5f5f]">不建議，也無法適用。</span>
+          <br />
+          婚禮／結婚登記屬於時間不可延誤、會被大量拍攝紀錄的重要場合，對妝容的細緻度、持妝穩定度與流程安排要求更高，才能確保當天呈現與服務品質。
+        </>
+      ),
+    },
+    {
+      q: "送出預約表單就算預約成功了嗎？",
+      a: (
+        <>
+          還不算。
+          <br />
+          <span className="font-bold text-[#5e5a56]">
+            送出表單僅代表「提出預約申請」
+          </span>
+          ，需經 Harper 確認檔期、回覆報價並完成訂金付款後，預約才算正式成立。
+        </>
+      ),
+    },
+    {
+      q: "訂金是多少？什麼時候要付？",
+      a: (
+        <>
+          訂金為每位 NT$500，
+          <br />
+          例如梳化人數為 2 位，訂金即為 NT$1000，以此類推。
+          <br />
+          完成訂金付款並收到 Harper 回覆確認後，才會為您保留時段。
+        </>
+      ),
+    },
+    {
+      q: "可以改期或取消嗎？",
+      a: (
+        <>
+          可以。
+          <br />
+          因事改期請於至少 3 天前告知，並以一次為限。
+          <br />
+          若場地租借空間無法退款，將由訂金中扣除相關費用後退回餘款。
+          <br />
+          <span className="font-bold text-[#9f5f5f]">
+            請勿於當天臨時取消或未到，訂金恕不退回，敬請理解。
+          </span>
+        </>
+      ),
+    },
+    {
+      q: "到府梳化會加收費用嗎？",
+      a: (
+        <>
+          會。
+          <br />
+          到府梳化之車馬費將依距離、時段與地點另行報價，實際費用將以 Harper
+          回覆確認為準。
+        </>
+      ),
+    },
+    {
+      q: "跟妝一定要加購嗎？",
+      a: (
+        <>
+          不一定。
+          <br />
+          是否需要跟妝會依活動性質、時數與現場狀況評估。
+          <br />
+          若不確定是否有跟妝需求，也可以請 Harper 協助評估是否需要加購。
+        </>
+      ),
+    },
+    {
+      q: "如果我臨時會遲到怎麼辦？",
+      a: (
+        <>
+          當然希望大家都能準時抵達開妝，但路況或突發狀況難免發生。
+          <br />
+          若確定會晚到，請提前告知，讓我可以協助調整流程。
+          <br />
+          若因遲到影響可服務時間，妝髮完整度將以不影響下一位客人為前提進行調整，敬請見諒。
+        </>
+      ),
+    },
+    {
+      q: "有皮膚敏感、針眼或近期醫美可以化妝嗎？",
+      a: (
+        <>
+          請務必事先告知。
+          <br />
+          如有針眼、皮膚病、過敏或近期醫美療程，Harper
+          會評估是否適合上妝，必要時也會建議改期，以保障您與其他客人的健康與安全。
+        </>
+      ),
+    },
+    {
+      q: "可以指定妝感或提供參考圖嗎？",
+      a: (
+        <>
+          可以。
+          <br />
+          建議於梳化前提供 1–3 張妝感或造型參考圖。
+          <br />
+          若沒有明確想法，也非常歡迎提供當天服裝或整體風格，讓我一起和你討論並給予建議
+          ❤️
+          <br />
+          Harper 會依您的五官比例、膚況與活動需求，調整出最適合您的妝容風格。
+        </>
+      ),
+    },
   ];
+
   return (
     <div className="space-y-6 pb-20">
       <SectionHeader title="Q & A" subtitle="常見問題" />
       <div className="space-y-3">
         {faqs.map((f, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-[#e6e2dc] overflow-hidden">
-            <button onClick={() => setIdx(idx === i ? null : i)} className="w-full px-6 py-4 text-left flex justify-between items-center group">
-              <span className="text-sm font-medium text-[#5e5a56] pr-4">{f.q}</span>
-              {idx === i ? <ChevronUp size={16} className="text-[#8c8680]" /> : <ChevronDown size={16} className="text-[#d4cfc9]" />}
+          <div
+            key={i}
+            className="bg-white rounded-2xl border border-[#e6e2dc] overflow-hidden"
+          >
+            <button
+              onClick={() => setIdx(idx === i ? null : i)}
+              className="w-full px-6 py-4 text-left flex justify-between items-center group"
+            >
+              <span className="text-sm font-medium text-[#5e5a56] pr-4">
+                {f.q}
+              </span>
+              {idx === i ? (
+                <ChevronUp size={16} className="text-[#8c8680]" />
+              ) : (
+                <ChevronDown size={16} className="text-[#d4cfc9]" />
+              )}
             </button>
-            {idx === i && <div className="px-6 pb-6 pt-0 text-xs text-[#8c8680] leading-relaxed whitespace-pre-wrap"><div className="h-px w-full bg-[#fcfbf9] mb-3"></div>{f.a}</div>}
+            {idx === i && (
+              <div className="px-6 pb-6 pt-0 text-xs text-[#8c8680] leading-relaxed pl-9">
+                <div className="h-px w-full bg-[#fcfbf9] mb-3"></div>
+                {f.a}
+              </div>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 };
-
-const RulesSection = () => (
-    <div className="space-y-6 pb-20">
-      <SectionHeader title="Notice" subtitle="預約須知" />
-      <div className="bg-white p-6 rounded-2xl border border-[#e6e2dc] shadow-sm space-y-4">
-          <p className="text-xs text-[#8c8680] leading-loose">
-              1. 預約需經 Harper 確認檔期並支付訂金後才算成立。<br/>
-              2. 訂金為每位 NT$500，取消或未到恕不退還。<br/>
-              3. 請準時抵達，遲到將影響妝髮完整度。<br/>
-              4. 合作工作室依當日空檔安排，實際地點以確認回覆為準。
-          </p>
-      </div>
-    </div>
-);
-
 // --- 核心組件：BookingForm (大幅更新) ---
 const BookingForm = ({ onSubmit, isSubmitting }) => {
   const [data, setData] = useState({
