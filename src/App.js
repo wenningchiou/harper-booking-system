@@ -437,10 +437,51 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
                  {stats.total >= 3 && (<div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex gap-3"><AlertCircle size={18} className="text-orange-400 flex-shrink-0 mt-0.5" /><div className="text-xs text-orange-800 leading-relaxed"><span className="font-bold">提醒 🤍</span><br/>已偵測到您本次梳化人數較多，請確認每位的方案人數是否填寫正確。<br/>送出後 Harper 會再依日期、地點與工作室空檔協助確認安排與最終費用。</div></div>)}
              </div>
         )}
-        <div className="space-y-4 pt-2">
+<div className="space-y-4">
           <Label icon={Calendar} text="日期與時段" />
-          <input type="date" required value={data.dates[0]} onChange={e => { const d=[...data.dates]; d[0]=e.target.value; setData({...data, dates: d})}} className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
-          <div className="space-y-2">
+          <span className="text-xs text-[#8c8680] w-12 flex-shrink-0 font-bold">
+            首選日期（必選）
+          </span>
+          <input
+            type="date"
+            required
+            value={data.dates[0]}
+            onChange={(e) => {
+              const d = [...data.dates];
+              d[0] = e.target.value;
+              handleChange("dates", d);
+            }}
+            className="w-full p-2.5 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+          />
+
+          <div className="flex gap-2">
+            <span className="text-xs text-[#8c8680] w-8 flex-shrink-0 font-bold">
+              候補日期
+            </span>
+            <input
+              type="date"
+              placeholder="候補1"
+              value={data.dates[1]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[1] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
+            <input
+              type="date"
+              placeholder="候補2"
+              value={data.dates[2]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[2] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
+          </div>
+                    <div className="space-y-2">
               <Label icon={Clock} text="可梳化時段（可複選）" />
               <div className="flex flex-wrap gap-2">{["凌晨 (07:00前)", "早上 (07:00-12:00)", "下午 (12:00-17:00)", "傍晚 (17:00-19:00)"].map(t => (<SelectBadge key={t} active={data.timeSlots.includes(t)} onClick={() => { const curr = data.timeSlots; setData({...data, timeSlots: curr.includes(t) ? curr.filter(x=>x!==t) : [...curr, t]}); }}>{t}</SelectBadge>))}</div>
               {data.timeSlots.includes("凌晨 (07:00前)") && (<div className="mt-1 text-[11px] text-orange-800 bg-orange-50 border border-orange-100 p-3 rounded-xl animate-fade-in flex items-start gap-2"><span className="text-base mt-[-2px]">💡</span><span>已選擇凌晨開妝時段，將另收 每小時 NT$700 鐘點費。</span></div>)}
