@@ -320,13 +320,13 @@ const PriceSection = () => (
       <PriceCard
         title="一般妝髮"
         price="2,000"
-        desc="適合約會、日常拍攝、面試"
+        desc="以自然乾淨的妝感為主。適用於日常聚會、證件照、面試等場合。"
         warning="一般妝髮不包含假睫毛與妝面飾品，如有需求請選擇精緻妝髮。"
       />
       <PriceCard
         title="精緻妝髮"
         price="2,500"
-        desc="適合重要活動、寫真、尾牙"
+        desc="加強整體妝容細緻度，妝感更完整、穩定。適用於寫真拍攝、活動表演、重要場合等需求的活動。"
         highlight
       />
       <PriceCard
