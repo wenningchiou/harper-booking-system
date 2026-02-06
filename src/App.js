@@ -345,83 +345,175 @@ const RulesSection = () => {
   );
 };
 
+// --- 核心組件：BookingForm (已加入一般妝髮提醒) ---
 const BookingForm = ({ onSubmit, isSubmitting }) => {
   const [data, setData] = useState({
-    name: "", phone: "", instagram: "", usageType: "", customUsage: "", quantities: {}, dates: ["", "", ""], timeSlots: [], finishTimeH: "09", finishTimeM: "00", city: "", locationType: "", followUp: "", notes: "", agreement1: false, agreement2: false, agreement3: false,
+    name: "", phone: "", instagram: "",
+    usageType: "", // 存放 id
+    customUsage: "", // 若選其他，手動輸入的內容
+    quantities: {}, // { 'bride_reg': 1, 'groom': 1 }
+    dates: ["", "", ""], timeSlots: [], finishTimeH: "09", finishTimeM: "00",
+    city: "", locationType: "", followUp: "", notes: "",
+    agreement1: false, agreement2: false, agreement3: false,
   });
+
+  // 取得目前選擇的用途模式
   const currentMode = useMemo(() => {
     const type = USAGE_TYPES.find(u => u.id === data.usageType);
     return type ? type.mode : null;
   }, [data.usageType]);
+
+  // 根據用途模式篩選要顯示的方案
   const displayedServices = useMemo(() => {
     if (!currentMode) return [];
     if (currentMode === 'registration') return SERVICE_CATALOG.filter(s => s.category === 'registration');
     if (currentMode === 'standard' || currentMode === 'standard_with_input') return SERVICE_CATALOG.filter(s => s.category === 'standard');
     return [];
   }, [currentMode]);
-  
-  // 🌟 修正後的報價邏輯 🌟
+
+  // 計算人數與金額 (含一般方案偵測)
   const stats = useMemo(() => {
     let female = 0, male = 0, basePrice = 0;
     let quoteItems = [];
+    
+    // 偵測是否選了一般方案 (一般單妝容 gen_single 或 一般妝髮方案 gen_full)
+    let hasGeneral = false;
+
     Object.entries(data.quantities).forEach(([sid, count]) => {
         const svc = SERVICE_CATALOG.find(s => s.id === sid);
         if (svc) {
             if (svc.type === 'female') female += count;
             if (svc.type === 'male') male += count;
             basePrice += svc.price * count;
+
+            // 判斷是否為一般方案
+            if (sid === 'gen_single' || sid === 'gen_full') {
+                hasGeneral = true;
+            }
         }
     });
+
     let isQuoteNeeded = false;
+    // 報價邏輯
     if (data.usageType === 'wedding') { isQuoteNeeded = true; quoteItems.push("婚禮/新秘服務"); }
     if (data.usageType === 'other') { isQuoteNeeded = true; quoteItems.push("特殊需求"); }
+    
     if (data.city === '高雄' && data.locationType.includes('工作室')) basePrice += 300;
     if (data.city === '台南' && data.locationType.includes('工作室')) basePrice += 300;
-    if (data.locationType.includes('報價') || data.locationType.includes('到府')) { isQuoteNeeded = true; quoteItems.push("車馬費/場地費"); }
     
-    // 👇 修正重點：只有當 followUp 有值，且不是「不需要」時，才顯示跟妝服務
+    if (data.locationType.includes('報價') || data.locationType.includes('到府')) { 
+        isQuoteNeeded = true; 
+        quoteItems.push("車馬費/場地費"); 
+    }
+    
+    // 修正跟妝邏輯：只有當 followUp 有值且不是「不需要」才顯示
     if (data.followUp && data.followUp !== '不需要') { 
         isQuoteNeeded = true; 
         quoteItems.push("跟妝服務"); 
     }
     
-    if (data.timeSlots.includes("凌晨 (07:00前)")) { quoteItems.push("早妝鐘點費"); isQuoteNeeded = true; }
-    return { female, male, total: female + male, basePrice, isQuoteNeeded, quoteItems };
+    if (data.timeSlots.includes("凌晨 (07:00前)")) { 
+        quoteItems.push("早妝鐘點費"); 
+        isQuoteNeeded = true; 
+    }
+
+    return { female, male, total: female + male, basePrice, isQuoteNeeded, quoteItems, hasGeneral };
   }, [data]);
 
-  const handleUsageChange = (e) => { const newType = e.target.value; setData(p => ({ ...p, usageType: newType, quantities: {}, customUsage: newType === 'other' ? '' : '' })); };
-  const handleQtyChange = (id, delta) => { setData(prev => { const curr = prev.quantities[id] || 0; const next = Math.max(0, curr + delta); const newQtys = { ...prev.quantities }; if (next === 0) delete newQtys[id]; else newQtys[id] = next; return { ...prev, quantities: newQtys }; }); };
+  // Handler: 變更用途
+  const handleUsageChange = (e) => {
+    const newType = e.target.value;
+    setData(p => ({ 
+        ...p, 
+        usageType: newType, 
+        quantities: {}, // 清空已選方案
+        customUsage: newType === 'other' ? '' : '' 
+    }));
+  };
+
+  // Handler: 變更數量
+  const handleQtyChange = (id, delta) => {
+    setData(prev => {
+        const curr = prev.quantities[id] || 0;
+        const next = Math.max(0, curr + delta);
+        const newQtys = { ...prev.quantities };
+        if (next === 0) delete newQtys[id];
+        else newQtys[id] = next;
+        return { ...prev, quantities: newQtys };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!data.name || !data.phone || !data.instagram || !data.dates[0] || !data.usageType) return alert("請填寫完整資訊");
+    
+    // 檢查是否有選方案 (除了純報價的婚禮外)
     if (data.usageType !== 'wedding' && stats.total === 0) return alert("請至少選擇一位梳化人數");
     if (data.usageType === 'other' && !data.customUsage) return alert("請填寫您的需求說明");
     if (!data.agreement1) return alert("請確認並勾選同意事項");
-    const serviceListStr = Object.entries(data.quantities).map(([id, n]) => { const s = SERVICE_CATALOG.find(x => x.id === id); return `${s.name} x${n}`; }).join(", ");
+
+    // 準備資料
+    const serviceListStr = Object.entries(data.quantities).map(([id, n]) => {
+        const s = SERVICE_CATALOG.find(x => x.id === id);
+        return `${s.name} x${n}`;
+    }).join(", ");
+
     const usageLabel = USAGE_TYPES.find(u => u.id === data.usageType)?.label;
     const finalPurpose = data.usageType === 'other' ? `其他: ${data.customUsage}` : usageLabel;
-    onSubmit({ ...data, purpose: finalPurpose, peopleCountFemale: stats.female, peopleCountMale: stats.male, serviceType: serviceListStr || "待報價項目", estimatedPrice: stats.basePrice, isQuoteRequired: stats.isQuoteNeeded });
+
+    onSubmit({
+        ...data,
+        purpose: finalPurpose,
+        peopleCountFemale: stats.female,
+        peopleCountMale: stats.male,
+        serviceType: serviceListStr || "待報價項目",
+        estimatedPrice: stats.basePrice,
+        isQuoteRequired: stats.isQuoteNeeded
+    });
   };
 
   return (
     <div className="space-y-6 pb-20">
       <SectionHeader title="Reservation" subtitle="立即預約" />
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-[2rem] shadow-sm border border-[#e6e2dc] space-y-6">
+        
+        {/* 基本資料 */}
         <div className="grid grid-cols-2 gap-3">
           <InputBox icon={User} label="姓名" required value={data.name} onChange={v => setData({...data, name: v})} ph="姓名" />
           <InputBox icon={Send} label="電話" required value={data.phone} onChange={v => setData({...data, phone: v})} ph="手機" />
         </div>
         <InputBox icon={Instagram} label="Instagram" required value={data.instagram} onChange={v => setData({...data, instagram: v})} ph="@您的ID" />
+
+        {/* 用途選擇 */}
         <div className="space-y-3 animate-fade-in">
              <Label icon={Heart} text="本次梳化活動用途" />
              <div className="relative">
-                 <select value={data.usageType} onChange={handleUsageChange} className="w-full p-4 rounded-xl border border-[#e6e2dc] bg-[#faf9f6] text-sm text-[#5e5a56] outline-none appearance-none font-medium">
-                     <option value="" disabled>請選擇用途</option>{USAGE_TYPES.map(t => (<option key={t.id} value={t.id}>{t.label}</option>))}
+                 <select 
+                    value={data.usageType} 
+                    onChange={handleUsageChange}
+                    className="w-full p-4 rounded-xl border border-[#e6e2dc] bg-[#faf9f6] text-sm text-[#5e5a56] outline-none appearance-none font-medium"
+                 >
+                     <option value="" disabled>請選擇用途</option>
+                     {USAGE_TYPES.map(t => (
+                         <option key={t.id} value={t.id}>{t.label}</option>
+                     ))}
                  </select>
                  <ChevronDown size={16} className="absolute right-4 top-4 text-[#a8a4a0] pointer-events-none" />
              </div>
-             {data.usageType === 'other' && (<input type="text" placeholder="請說明您的活動需求..." value={data.customUsage} onChange={e => setData({...data, customUsage: e.target.value})} className="w-full p-3 rounded-xl border border-[#d4cfc9] bg-white text-sm outline-none focus:border-[#8c8680] animate-fade-in" />)}
+
+             {/* 其他輸入框 */}
+             {data.usageType === 'other' && (
+                 <input 
+                    type="text" 
+                    placeholder="請說明您的活動需求..." 
+                    value={data.customUsage}
+                    onChange={e => setData({...data, customUsage: e.target.value})}
+                    className="w-full p-3 rounded-xl border border-[#d4cfc9] bg-white text-sm outline-none focus:border-[#8c8680] animate-fade-in"
+                 />
+             )}
         </div>
+
+        {/* 方案列表 */}
         {displayedServices.length > 0 && (
             <div className="space-y-2 animate-fade-in">
                 <Label icon={Sparkles} text="選擇方案與人數" />
@@ -429,63 +521,199 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
                     const count = data.quantities[svc.id] || 0;
                     return (
                         <div key={svc.id} className={`flex justify-between items-center p-3 rounded-xl border transition-all ${count > 0 ? "bg-[#fcfbf9] border-[#8c8680]" : "border-[#f2f0eb]"}`}>
-                            <div><div className="text-sm font-medium text-[#5e5a56]">{svc.name}</div><div className="text-xs text-[#a8a4a0]">NT$ {svc.price.toLocaleString()}</div></div>
-                            <div className="flex items-center gap-3"><button type="button" onClick={() => handleQtyChange(svc.id, -1)} disabled={count===0} className="w-8 h-8 rounded-lg bg-white border border-[#e6e2dc] text-[#8c8680] disabled:opacity-30 flex items-center justify-center">-</button><span className="w-4 text-center font-bold text-[#5e5a56]">{count}</span><button type="button" onClick={() => handleQtyChange(svc.id, 1)} className="w-8 h-8 rounded-lg bg-white border border-[#e6e2dc] text-[#8c8680] flex items-center justify-center">+</button></div>
+                            <div>
+                                <div className="text-sm font-medium text-[#5e5a56]">{svc.name}</div>
+                                <div className="text-xs text-[#a8a4a0]">NT$ {svc.price.toLocaleString()}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button type="button" onClick={() => handleQtyChange(svc.id, -1)} disabled={count===0} className="w-8 h-8 rounded-lg bg-white border border-[#e6e2dc] text-[#8c8680] disabled:opacity-30 flex items-center justify-center">-</button>
+                                <span className="w-4 text-center font-bold text-[#5e5a56]">{count}</span>
+                                <button type="button" onClick={() => handleQtyChange(svc.id, 1)} className="w-8 h-8 rounded-lg bg-white border border-[#e6e2dc] text-[#8c8680] flex items-center justify-center">+</button>
+                            </div>
                         </div>
                     );
                 })}
             </div>
         )}
-        {data.usageType === 'wedding' && (<div className="bg-[#fcfbf9] border border-dashed border-[#d4cfc9] p-6 rounded-xl text-center space-y-2 animate-fade-in"><Diamond className="w-8 h-8 text-[#8c8680] mx-auto mb-2" /><h3 className="text-sm font-bold text-[#5e5a56]">婚禮 / 新秘服務</h3><p className="text-xs text-[#a8a4a0]">將依需求與細節另行報價</p></div>)}
+
+        {/* 婚禮特殊顯示 */}
+        {data.usageType === 'wedding' && (
+            <div className="bg-[#fcfbf9] border border-dashed border-[#d4cfc9] p-6 rounded-xl text-center space-y-2 animate-fade-in">
+                <Diamond className="w-8 h-8 text-[#8c8680] mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-[#5e5a56]">婚禮 / 新秘服務</h3>
+                <p className="text-xs text-[#a8a4a0]">將依需求與細節另行報價</p>
+            </div>
+        )}
+
+        {/* 總人數與提醒 */}
         {(stats.total > 0 || data.usageType === 'wedding') && (
              <div className="space-y-3 animate-fade-in">
-                 <div className="bg-[#faf9f6] p-4 rounded-xl border border-[#e6e2dc] flex justify-between items-center text-sm text-[#5e5a56]"><span className="font-bold text-[#8c8680]">總梳化人數</span><div className="font-medium">女 {stats.female} 位｜男 {stats.male} 位 <span className="text-[#a8a4a0] text-xs">(共 {stats.total} 位)</span></div></div>
-                 {stats.total >= 3 && (<div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex gap-3"><AlertCircle size={18} className="text-orange-400 flex-shrink-0 mt-0.5" /><div className="text-xs text-orange-800 leading-relaxed"><span className="font-bold">提醒 🤍</span><br/>已偵測到您本次梳化人數較多，請確認每位的方案人數是否填寫正確。<br/>送出後 Harper 會再依日期、地點與工作室空檔協助確認安排與最終費用。</div></div>)}
+                 <div className="bg-[#faf9f6] p-4 rounded-xl border border-[#e6e2dc] flex justify-between items-center text-sm text-[#5e5a56]">
+                    <span className="font-bold text-[#8c8680]">總梳化人數</span>
+                    <div className="font-medium">
+                        女 {stats.female} 位｜男 {stats.male} 位 <span className="text-[#a8a4a0] text-xs">(共 {stats.total} 位)</span>
+                    </div>
+                 </div>
+
+                 {stats.total >= 3 && (
+                     <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex gap-3">
+                         <AlertCircle size={18} className="text-orange-400 flex-shrink-0 mt-0.5" />
+                         <div className="text-xs text-orange-800 leading-relaxed">
+                             <span className="font-bold">提醒 🤍</span><br/>
+                             已偵測到您本次梳化人數較多，請確認每位的方案人數是否填寫正確。<br/>
+                             送出後 Harper 會再依日期、地點與工作室空檔協助確認安排與最終費用。
+                         </div>
+                     </div>
+                 )}
              </div>
         )}
+
+        {/* 日期與時段 */}
         <div className="space-y-4 pt-2">
           <Label icon={Calendar} text="日期與時段" />
           <input type="date" required value={data.dates[0]} onChange={e => { const d=[...data.dates]; d[0]=e.target.value; setData({...data, dates: d})}} className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
           <div className="space-y-2">
               <Label icon={Clock} text="可梳化時段（可複選）" />
-              <div className="flex flex-wrap gap-2">{["凌晨 (07:00前)", "早上 (07:00-12:00)", "下午 (12:00-17:00)", "傍晚 (17:00-19:00)"].map(t => (<SelectBadge key={t} active={data.timeSlots.includes(t)} onClick={() => { const curr = data.timeSlots; setData({...data, timeSlots: curr.includes(t) ? curr.filter(x=>x!==t) : [...curr, t]}); }}>{t}</SelectBadge>))}</div>
-              {data.timeSlots.includes("凌晨 (07:00前)") && (<div className="mt-1 text-[11px] text-orange-800 bg-orange-50 border border-orange-100 p-3 rounded-xl animate-fade-in flex items-start gap-2"><span className="text-base mt-[-2px]">💡</span><span>已選擇凌晨開妝時段，將另收 每小時 NT$700 鐘點費。</span></div>)}
+              <div className="flex flex-wrap gap-2">
+                {["凌晨 (07:00前)", "早上 (07:00-12:00)", "下午 (12:00-17:00)", "傍晚 (17:00-19:00)"].map(t => (
+                  <SelectBadge key={t} active={data.timeSlots.includes(t)} onClick={() => {
+                      const curr = data.timeSlots;
+                      setData({...data, timeSlots: curr.includes(t) ? curr.filter(x=>x!==t) : [...curr, t]});
+                  }}>{t}</SelectBadge>
+                ))}
+              </div>
+
+              {/* 凌晨加價提醒 */}
+              {data.timeSlots.includes("凌晨 (07:00前)") && (
+                  <div className="mt-1 text-[11px] text-orange-800 bg-orange-50 border border-orange-100 p-3 rounded-xl animate-fade-in flex items-start gap-2">
+                      <span className="text-base mt-[-2px]">💡</span>
+                      <span>已選擇凌晨開妝時段，將另收 每小時 NT$700 鐘點費。</span>
+                  </div>
+              )}
           </div>
-          <div className="bg-[#faf9f6] p-3 rounded-xl flex items-center justify-between border border-[#e6e2dc]"><span className="text-xs text-[#8c8680] font-bold pl-1">最晚完妝時間</span><div className="flex items-center gap-1"><select value={data.finishTimeH} onChange={e=>setData({...data, finishTimeH:e.target.value})} className="bg-transparent font-serif text-lg outline-none">{[...Array(24).keys()].map(i=><option key={i} value={String(i).padStart(2,"0")}>{String(i).padStart(2,"0")}</option>)}</select><span>:</span><select value={data.finishTimeM} onChange={e=>setData({...data, finishTimeM:e.target.value})} className="bg-transparent font-serif text-lg outline-none"><option value="00">00</option><option value="30">30</option></select></div></div>
+
+          <div className="bg-[#faf9f6] p-3 rounded-xl flex items-center justify-between border border-[#e6e2dc]">
+            <span className="text-xs text-[#8c8680] font-bold pl-1">最晚完妝時間</span>
+            <div className="flex items-center gap-1">
+              <select value={data.finishTimeH} onChange={e=>setData({...data, finishTimeH:e.target.value})} className="bg-transparent font-serif text-lg outline-none">{[...Array(24).keys()].map(i=><option key={i} value={String(i).padStart(2,"0")}>{String(i).padStart(2,"0")}</option>)}</select>
+              <span>:</span>
+              <select value={data.finishTimeM} onChange={e=>setData({...data, finishTimeM:e.target.value})} className="bg-transparent font-serif text-lg outline-none"><option value="00">00</option><option value="30">30</option></select>
+            </div>
+          </div>
         </div>
+
+        {/* 地點與跟妝 */}
         <div className="space-y-3 pt-2">
            <Label icon={MapPin} text="地點與場地" />
-           <div className="grid grid-cols-3 gap-2"><SelectBadge active={data.city==='高雄'} onClick={()=>setData({...data, city:'高雄', locationType:''})}>高雄</SelectBadge><SelectBadge active={data.city==='台南'} onClick={()=>setData({...data, city:'台南', locationType:''})}>台南</SelectBadge><SelectBadge active={data.city==='其他'} onClick={()=>setData({...data, city:'其他', locationType:''})}>其他縣市</SelectBadge></div>
-           {data.city && (<div className="space-y-2 animate-fade-in pt-1">{data.city === '高雄' && <RadioBox checked={data.locationType.includes('工作室')} onClick={()=>setData({...data, locationType:'合作工作室｜巨蛋站 (場地費$300)'})} title="合作工作室｜巨蛋站" subtitle="場地費 $300" />}{data.city === '台南' && <RadioBox checked={data.locationType.includes('工作室')} onClick={()=>setData({...data, locationType:'合作工作室｜大同路 (場地費$300)'})} title="合作工作室｜大同路" subtitle="場地費 $300" />}<RadioBox checked={data.locationType.includes('到府')} onClick={()=>setData({...data, locationType:'到府服務 (報價)'})} title="到府服務" subtitle="車馬費另計" /><RadioBox checked={data.locationType.includes('協助找')} onClick={()=>setData({...data, locationType:'協助找開妝點 (報價)'})} title="協助找開妝點" subtitle="場地/車馬費另計" /></div>)}
+           <div className="grid grid-cols-3 gap-2">
+               <SelectBadge active={data.city==='高雄'} onClick={()=>setData({...data, city:'高雄', locationType:''})}>高雄</SelectBadge>
+               <SelectBadge active={data.city==='台南'} onClick={()=>setData({...data, city:'台南', locationType:''})}>台南</SelectBadge>
+               <SelectBadge active={data.city==='其他'} onClick={()=>setData({...data, city:'其他', locationType:''})}>其他縣市</SelectBadge>
+           </div>
+           {data.city && (
+               <div className="space-y-2 animate-fade-in pt-1">
+                   {data.city === '高雄' && <RadioBox checked={data.locationType.includes('工作室')} onClick={()=>setData({...data, locationType:'合作工作室｜巨蛋站 (場地費$300)'})} title="合作工作室｜巨蛋站" subtitle="場地費 $300" />}
+                   {data.city === '台南' && <RadioBox checked={data.locationType.includes('工作室')} onClick={()=>setData({...data, locationType:'合作工作室｜大同路 (場地費$300)'})} title="合作工作室｜大同路" subtitle="場地費 $300" />}
+                   <RadioBox checked={data.locationType.includes('到府')} onClick={()=>setData({...data, locationType:'到府服務 (報價)'})} title="到府服務" subtitle="車馬費另計" />
+                   <RadioBox checked={data.locationType.includes('協助找')} onClick={()=>setData({...data, locationType:'協助找開妝點 (報價)'})} title="協助找開妝點" subtitle="場地/車馬費另計" />
+               </div>
+           )}
         </div>
-        <div className="space-y-3"><Label icon={Users} text="跟妝需求" />{["不需要", "需要-另行報價($700/hr)", "不確定，請Harper協助評估"].map(o => (<RadioBox key={o} checked={data.followUp === o} onClick={()=>setData({...data, followUp: o})} title={o} />))}</div>
+
+        <div className="space-y-3">
+             <Label icon={Users} text="跟妝需求" />
+             {["不需要", "需要-另行報價($700/hr)", "不確定，請Harper協助評估"].map(o => (
+                 <RadioBox key={o} checked={data.followUp === o} onClick={()=>setData({...data, followUp: o})} title={o} />
+             ))}
+        </div>
+        
         <textarea value={data.notes} onChange={e=>setData({...data, notes:e.target.value})} className="w-full p-3 rounded-xl border border-[#e6e2dc] bg-[#faf9f6] text-sm outline-none resize-none" rows="2" placeholder="備註（非必填）..." />
+
+        {/* 價格估算卡 */}
         <div className="bg-[#8c8680] rounded-2xl p-5 text-white shadow-xl relative overflow-hidden transition-all">
              <div className="absolute top-0 right-0 p-4 opacity-20"><Sparkles size={60} /></div>
+             
              <div className="relative z-10">
                  <div className="text-[10px] font-bold tracking-widest text-[#e6e2dc] uppercase mb-1">Estimated Price 價格估算</div>
-                 <div className="flex items-baseline gap-2 mb-2"><span className="text-3xl font-serif font-medium text-white">NT$ {stats.basePrice.toLocaleString()} {stats.isQuoteNeeded && <span className="text-sm font-sans ml-1 opacity-80">起</span>}</span></div>
-                 <div className="text-xs space-y-1 mb-2 text-[#f2f0eb] opacity-90">{Object.entries(data.quantities).map(([id, n]) => { const s = SERVICE_CATALOG.find(x => x.id === id); return s ? <div key={id}>• {s.name} x{n}</div> : null; })}{data.locationType.includes('工作室') && <div>• 工作室場地費</div>}</div>
-                 {stats.isQuoteNeeded && (<div className="border-t border-white/20 pt-2 mt-2"><div className="text-[10px] text-[#e6e2dc] mb-1">其他需求將於確認後另行報價：</div><div className="flex flex-wrap gap-2">{stats.quoteItems.map(item => (<span key={item} className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded border border-white/10">{item}</span>))}</div></div>)}
+                 <div className="flex items-baseline gap-2 mb-2">
+                     <span className="text-3xl font-serif font-medium text-white">
+                         NT$ {stats.basePrice.toLocaleString()} 
+                         {stats.isQuoteNeeded && <span className="text-sm font-sans ml-1 opacity-80">起</span>}
+                     </span>
+                 </div>
+                 
+                 {/* 顯示已選項目 */}
+                 <div className="text-xs space-y-1 mb-2 text-[#f2f0eb] opacity-90">
+                     {Object.entries(data.quantities).map(([id, n]) => {
+                         const s = SERVICE_CATALOG.find(x => x.id === id);
+                         return s ? <div key={id}>• {s.name} x{n}</div> : null;
+                     })}
+                     {data.locationType.includes('工作室') && <div>• 工作室場地費</div>}
+                 </div>
+
+                 {/* 🆕 這裡加入了一般妝髮的提醒 */}
+                 {stats.hasGeneral && (
+                     <div className="mt-3 mb-2 text-[10px] text-[#ffddd6] bg-white/10 px-3 py-2 rounded-lg border border-white/10 flex items-start gap-2">
+                        <span className="text-sm mt-[-1px]">⚠️</span>
+                        <span>提醒：一般妝髮不含假睫毛與飾品。</span>
+                     </div>
+                 )}
+
+                 {/* 另行報價提示 */}
+                 {stats.isQuoteNeeded && (
+                     <div className="border-t border-white/20 pt-2 mt-2">
+                         <div className="text-[10px] text-[#e6e2dc] mb-1">其他需求將於確認後另行報價：</div>
+                         <div className="flex flex-wrap gap-2">
+                             {stats.quoteItems.map(item => (
+                                 <span key={item} className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded border border-white/10">{item}</span>
+                             ))}
+                         </div>
+                     </div>
+                 )}
              </div>
         </div>
-        <div className="mt-2 text-[10px] text-[#a8a4a0] text-center leading-relaxed px-2">*以上為基本報價，實際費用將依人數、性質、地點與車馬費等調整，以 Harper 回覆為準。</div>
+
+        <div className="mt-2 text-[10px] text-[#a8a4a0] text-center leading-relaxed px-2">
+            *以上為基本報價，實際費用將依人數、性質、地點與車馬費等調整，以 Harper 回覆為準。
+        </div>
+
+        {/* 底部聲明與按鈕 */}
         <div className="space-y-3 pt-2">
             <div className="bg-stone-100 p-4 rounded-xl space-y-3">
-              <h4 className="text-sm font-bold text-[#5e5a56]">預約流程說明</h4>
-              <div className="text-xs text-[#78716c] leading-relaxed space-y-2"><p className="font-bold text-[#57534e]">本表單為「預約需求填寫」，非最終報價與預約成立。</p><p>Harper 將依您填寫的服務內容、日期、地點及合作工作室空檔狀況，回覆是否可約與最終費用。</p><p className="font-bold text-[#57534e]">預約需以 Harper 回覆確認並完成訂金後，才算正式成立並保留時段。</p><p>送出前也請再次確認填寫資料正確，以避免影響排程與報價。</p></div>
-              <Label icon={Smile} text="同意條款勾選" />
-              <CheckBox checked={data.agreement1} onClick={(e) => setData({...data, agreement1:e.target.checked})} text="送出表單不代表預約成立，需回覆確認。" />
-              <CheckBox checked={data.agreement2} onClick={(e) => setData({...data, agreement2:e.target.checked})} text="我已詳細閱讀「預約須知」並同意。" />
-              <CheckBox checked={data.agreement3} onClick={(e) => setData({...data, agreement3:e.target.checked})} text="確認資料無誤。" />
+                <h4 className="text-sm font-bold text-[#5e5a56]">預約流程說明</h4>
+                <div className="text-xs text-[#78716c] leading-relaxed space-y-2">
+                    <p className="font-bold text-[#57534e]">本表單為「預約需求填寫」，非最終報價與預約成立。</p>
+                    <p>Harper 將依您填寫的服務內容、日期、地點及合作工作室空檔狀況，回覆是否可約與最終費用。</p>
+                    <p className="font-bold text-[#57534e]">預約需以 Harper 回覆確認並完成訂金後，才算正式成立並保留時段。</p>
+                    <p>送出前也請再次確認填寫資料正確，以避免影響排程與報價。</p>
+                </div>
+                
+                <Label icon={Smile} text="同意條款勾選" />
+                <CheckBox
+                    checked={data.agreement1}
+                    onClick={(e) => setData({...data, agreement1: e.target.checked})}
+                    text="送出表單不代表預約成立，需回覆確認。"
+                />
+                <CheckBox
+                    checked={data.agreement2}
+                    onClick={(e) => setData({...data, agreement2: e.target.checked})}
+                    text="我已詳細閱讀「預約須知」並同意。"
+                />
+                <CheckBox
+                    checked={data.agreement3}
+                    onClick={(e) => setData({...data, agreement3: e.target.checked})}
+                    text="確認資料無誤。"
+                />
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-4 rounded-full bg-[#8c8680] text-white font-medium tracking-[0.1em] shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">{isSubmitting ? "傳送中..." : <>送出預約申請 <Send size={16} /></>}</button>
+
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 rounded-full bg-[#8c8680] text-white font-medium tracking-[0.1em] shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                {isSubmitting ? "傳送中..." : <>送出預約申請 <Send size={16} /></>}
+            </button>
         </div>
       </form>
     </div>
   );
 };
-
 const SuccessModal = ({ data, onClose }) => {
   const copyText = `📋 Harper’s makeup｜預約申請\n\n姓名：${data.name}\n電話：${data.phone}\nIG：${data.instagram}\n\n用途：${data.purpose}\n內容：${data.serviceType}\n人數：女${data.peopleCountFemale} / 男${data.peopleCountMale}\n\n日期：${data.dates[0]}\n地點：${data.city} ${data.locationType}\n時間：${data.timeSlots.join('/')}\n完妝：${data.finishTimeH}:${data.finishTimeM}\n跟妝：${data.followUp}\n備註：${data.notes||'無'}\n\n估價：$${data.estimatedPrice}${data.isQuoteRequired ? ' 起 (含另行報價項目)' : ''}\n\n—\n麻煩幫我確認檔期與費用，謝謝！`;
   return (
