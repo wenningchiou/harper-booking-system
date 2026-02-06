@@ -348,7 +348,7 @@ const PriceSection = () => (
           <PriceRow label="新娘登記一般妝髮" price="2,500" />
           <PriceRow label="新娘登記精緻妝髮" price="3,000" />
           <PriceRow label="新郎妝髮" price="1,500" />
-          <PriceRow label="親友妝容" price="1,800" />
+          <PriceRow label="親友妝容" price="2,000" />
         </div>
       </div>
       <div className="p-5 rounded-2xl border border-dashed border-[#d4cfc9] text-center bg-[#fcfbf9]">
@@ -583,7 +583,7 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
         { name: "新娘登記一般妝髮", price: "NT$2500", time: "1-1.5hr" },
         { name: "新娘登記精緻妝髮", price: "NT$3000", time: "1.5-2hr" },
         { name: "新郎妝髮", price: "NT$1500", time: "30-60min" },
-        { name: "親友妝容", price: "NT$1800", time: "40-60min" },
+        { name: "親友妝容", price: "NT$2000", time: "40-60min" },
       ];
     return [
       { name: "一般方案｜單妝容", price: "NT$1600", time: "40-60min" },
