@@ -108,11 +108,11 @@ const SERVICE_CATALOG = [
   },
   { 
     id: 'family', 
-    name: '親友妝容', 
+    name: '親友妝髮', 
     price: 2000, 
     type: 'female', 
     category: 'registration', 
-    desc: '親友適用之自然氣色妝容（不含髮型）。' 
+    desc: '親友適用之自然氣色妝容與髮型。' 
   },
 ];
 // --- 2. 用途分類 ---
@@ -337,7 +337,7 @@ const PriceSection = () => (
           <PriceRow label="新娘登記妝髮" price="2,800" desc={`穩定、自然、符合登記需求的專業妝髮服務\n髮型以基礎髮型為主（不含複雜編髮與妝面飾品）`} />
           <PriceRow label="新娘登記妝髮Pro" price="3,200" desc={`針對拍攝、上鏡與重要紀錄需求所設計的進階方案\n髮型可依造型需求設計複雜編髮，整體完成度更高\n可搭配造型飾品`} />
           <PriceRow label="新郎妝髮" price="1,500" />
-          <PriceRow label="親友妝容" price="2,000" />
+          <PriceRow label="親友妝髮" price="2,000" />
         </div>
       </div>
       <div className="p-5 rounded-2xl border border-dashed border-[#d4cfc9] text-center bg-[#fcfbf9]"><h3 className="text-sm font-medium text-[#5e5a56] flex items-center justify-center gap-2 mb-1"><Sparkles size={16} /> 婚禮 / 新秘服務</h3><p className="text-xs text-[#a8a4a0]">請填寫預約單，將依需求另行報價</p></div>
