@@ -286,7 +286,7 @@ const FaqSection = () => {
       a: (<>不一定。<br/>是否需要跟妝會依活動性質、時數與現場狀況評估。<br/>若不確定是否有跟妝需求，也可以請 Harper 協助評估是否需要加購。</>),
     },
     {
-      q: "如果我臨時會遲到怎麼辦？",
+      q: "如果臨時無法抵達或晚到？",
       a: (<>當然希望大家都能準時抵達開妝，但路況或突發狀況難免發生。<br/>若確定會晚到，請提前告知，讓我可以協助調整流程。<br/>若因遲到影響可服務時間，妝髮完整度將以不影響下一位客人為前提進行調整，敬請見諒。</>),
     },
     {
@@ -569,10 +569,50 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
         )}
 
         {/* 日期與時段 */}
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4">
           <Label icon={Calendar} text="日期與時段" />
-          <input type="date" required value={data.dates[0]} onChange={e => { const d=[...data.dates]; d[0]=e.target.value; setData({...data, dates: d})}} className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
-          <div className="space-y-2">
+          <span className="text-xs text-[#8c8680] w-12 flex-shrink-0 font-bold">
+            首選日期
+          </span>
+          <input
+            type="date"
+            required
+            value={data.dates[0]}
+            onChange={(e) => {
+              const d = [...data.dates];
+              d[0] = e.target.value;
+              handleChange("dates", d);
+            }}
+            className="w-full p-2.5 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+          />
+
+          <div className="flex gap-2">
+            <span className="text-xs text-[#8c8680] w-8 flex-shrink-0 font-bold">
+              候補日期
+            </span>
+            <input
+              type="date"
+              placeholder="候補1"
+              value={data.dates[1]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[1] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
+            <input
+              type="date"
+              placeholder="候補2"
+              value={data.dates[2]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[2] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
+          </div>          <div className="space-y-2">
               <Label icon={Clock} text="可梳化時段（可複選）" />
               <div className="flex flex-wrap gap-2">
                 {["凌晨 (07:00前)", "早上 (07:00-12:00)", "下午 (12:00-17:00)", "傍晚 (17:00-19:00)"].map(t => (
