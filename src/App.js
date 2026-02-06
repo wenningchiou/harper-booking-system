@@ -112,7 +112,7 @@ const SERVICE_CATALOG = [
     price: 2000, 
     type: 'female', 
     category: 'registration', 
-    desc: '親友觀禮適用之自然氣色妝容（不含髮型）。' 
+    desc: '親友適用之自然氣色妝容（不含髮型）。' 
   },
 ];
 // --- 2. 用途分類 ---
