@@ -21,6 +21,12 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
 	<title>React App</title>
+	<style>
+      body {
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+      }
+    </style>
 </head>
 
 <body>
@@ -38,6 +44,11 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+	<script>
+      window.onload = function() {
+        document.body.style.opacity = "1";
+      };
+    </script>
 </body>
 
 </html>
