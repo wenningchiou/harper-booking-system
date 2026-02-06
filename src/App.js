@@ -344,7 +344,7 @@ const RulesSection = () => {
   );
 };
 
-// --- 核心組件：BookingForm (已修復 handleChange) ---
+// --- 核心組件：BookingForm (已加入日期防呆機制) ---
 const BookingForm = ({ onSubmit, isSubmitting }) => {
   const [data, setData] = useState({
     name: "", phone: "", instagram: "",
@@ -354,8 +354,28 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
     agreement1: false, agreement2: false, agreement3: false,
   });
 
-  // 👇👇👇 這裡補上了遺失的 handleChange 函式！ 👇👇👇
+  // 1. 補回原本遺失的 handleChange
   const handleChange = (key, value) => setData(prev => ({ ...prev, [key]: value }));
+
+  // 2. 🗓️ 計算日期限制 (防呆機制：今天 ~ 半年後)
+  const dateLimits = useMemo(() => {
+    const today = new Date();
+    const sixMonthsLater = new Date();
+    sixMonthsLater.setMonth(today.getMonth() + 6);
+
+    // 格式化為 YYYY-MM-DD
+    const formatDate = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    return {
+      min: formatDate(today),       // 今天
+      max: formatDate(sixMonthsLater) // 半年後
+    };
+  }, []);
 
   const currentMode = useMemo(() => {
     const type = USAGE_TYPES.find(u => u.id === data.usageType);
@@ -372,7 +392,6 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
   const stats = useMemo(() => {
     let female = 0, male = 0, basePrice = 0;
     let quoteItems = [];
-    
     let hasGeneral = false; // 偵測一般方案
 
     Object.entries(data.quantities).forEach(([sid, count]) => {
@@ -381,7 +400,6 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
             if (svc.type === 'female') female += count;
             if (svc.type === 'male') male += count;
             basePrice += svc.price * count;
-            
             if (sid === 'gen_single' || sid === 'gen_full') hasGeneral = true;
         }
     });
@@ -398,7 +416,6 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
         quoteItems.push("車馬費/場地費"); 
     }
     
-    // 跟妝邏輯：不是「不需要」才顯示
     if (data.followUp && data.followUp !== '不需要') { 
         isQuoteNeeded = true; 
         quoteItems.push("跟妝服務"); 
@@ -497,35 +514,63 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
             </div>
         )}
 
-        {data.usageType === 'wedding' && (
-            <div className="bg-[#fcfbf9] border border-dashed border-[#d4cfc9] p-6 rounded-xl text-center space-y-2 animate-fade-in">
-                <Diamond className="w-8 h-8 text-[#8c8680] mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-[#5e5a56]">婚禮 / 新秘服務</h3>
-                <p className="text-xs text-[#a8a4a0]">將依需求與細節另行報價</p>
-            </div>
-        )}
+        {data.usageType === 'wedding' && (<div className="bg-[#fcfbf9] border border-dashed border-[#d4cfc9] p-6 rounded-xl text-center space-y-2 animate-fade-in"><Diamond className="w-8 h-8 text-[#8c8680] mx-auto mb-2" /><h3 className="text-sm font-bold text-[#5e5a56]">婚禮 / 新秘服務</h3><p className="text-xs text-[#a8a4a0]">將依需求與細節另行報價</p></div>)}
 
         {(stats.total > 0 || data.usageType === 'wedding') && (
              <div className="space-y-3 animate-fade-in">
-                 <div className="bg-[#faf9f6] p-4 rounded-xl border border-[#e6e2dc] flex justify-between items-center text-sm text-[#5e5a56]">
-                    <span className="font-bold text-[#8c8680]">總梳化人數</span>
-                    <div className="font-medium">
-                        女 {stats.female} 位｜男 {stats.male} 位 <span className="text-[#a8a4a0] text-xs">(共 {stats.total} 位)</span>
-                    </div>
-                 </div>
+                 <div className="bg-[#faf9f6] p-4 rounded-xl border border-[#e6e2dc] flex justify-between items-center text-sm text-[#5e5a56]"><span className="font-bold text-[#8c8680]">總梳化人數</span><div className="font-medium">女 {stats.female} 位｜男 {stats.male} 位 <span className="text-[#a8a4a0] text-xs">(共 {stats.total} 位)</span></div></div>
                  {stats.total >= 3 && (<div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex gap-3"><AlertCircle size={18} className="text-orange-400 flex-shrink-0 mt-0.5" /><div className="text-xs text-orange-800 leading-relaxed"><span className="font-bold">提醒 🤍</span><br/>已偵測到您本次梳化人數較多，請確認每位的方案人數是否填寫正確。<br/>送出後 Harper 會再依日期、地點與工作室空檔協助確認安排與最終費用。</div></div>)}
              </div>
         )}
 
+        {/* --- 日期與時段 (這裡有加上 min 和 max 了！) --- */}
         <div className="space-y-4">
           <Label icon={Calendar} text="日期與時段" />
           <span className="text-xs text-[#8c8680] w-12 flex-shrink-0 font-bold">首選日期</span>
-          <input type="date" required value={data.dates[0]} onChange={(e) => { const d = [...data.dates]; d[0] = e.target.value; handleChange("dates", d); }} className="w-full p-2.5 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
+          <input
+            type="date"
+            required
+            min={dateLimits.min} // 👈 這裡加上了
+            max={dateLimits.max} // 👈 這裡加上了
+            value={data.dates[0]}
+            onChange={(e) => {
+              const d = [...data.dates];
+              d[0] = e.target.value;
+              handleChange("dates", d);
+            }}
+            className="w-full p-2.5 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+          />
+
           <div className="flex gap-2">
             <span className="text-xs text-[#8c8680] w-8 flex-shrink-0 font-bold">候補日期</span>
-            <input type="date" placeholder="候補1" value={data.dates[1]} onChange={(e) => { const d = [...data.dates]; d[1] = e.target.value; handleChange("dates", d); }} className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
-            <input type="date" placeholder="候補2" value={data.dates[2]} onChange={(e) => { const d = [...data.dates]; d[2] = e.target.value; handleChange("dates", d); }} className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none" />
+            <input
+              type="date"
+              placeholder="候補1"
+              min={dateLimits.min} // 👈 這裡加上了
+              max={dateLimits.max} // 👈 這裡加上了
+              value={data.dates[1]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[1] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
+            <input
+              type="date"
+              placeholder="候補2"
+              min={dateLimits.min} // 👈 這裡加上了
+              max={dateLimits.max} // 👈 這裡加上了
+              value={data.dates[2]}
+              onChange={(e) => {
+                const d = [...data.dates];
+                d[2] = e.target.value;
+                handleChange("dates", d);
+              }}
+              className="w-full p-3 bg-[#faf9f6] rounded-xl border border-[#e6e2dc] text-sm text-[#5e5a56] outline-none"
+            />
           </div>
+
           <div className="space-y-2">
               <Label icon={Clock} text="可梳化時段（可複選）" />
               <div className="flex flex-wrap gap-2">{["凌晨 (07:00前)", "早上 (07:00-12:00)", "下午 (12:00-17:00)", "傍晚 (17:00-19:00)"].map(t => (<SelectBadge key={t} active={data.timeSlots.includes(t)} onClick={() => { const curr = data.timeSlots; setData({...data, timeSlots: curr.includes(t) ? curr.filter(x=>x!==t) : [...curr, t]}); }}>{t}</SelectBadge>))}</div>
@@ -549,45 +594,16 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
              <div className="absolute top-0 right-0 p-4 opacity-20"><Sparkles size={60} /></div>
              <div className="relative z-10">
                  <div className="text-[10px] font-bold tracking-widest text-[#e6e2dc] uppercase mb-1">Estimated Price 價格估算</div>
-                 <div className="flex items-baseline gap-2 mb-2">
-                     <span className="text-3xl font-serif font-medium text-white">
-                         NT$ {stats.basePrice.toLocaleString()} 
-                         {stats.isQuoteNeeded && <span className="text-sm font-sans ml-1 opacity-80">起</span>}
-                     </span>
-                 </div>
-                 
-                 <div className="text-xs space-y-1 mb-2 text-[#f2f0eb] opacity-90">
-                     {Object.entries(data.quantities).map(([id, n]) => {
-                         const s = SERVICE_CATALOG.find(x => x.id === id);
-                         return s ? <div key={id}>• {s.name} x{n}</div> : null;
-                     })}
-                     {data.locationType.includes('工作室') && <div>• 工作室場地費</div>}
-                 </div>
-
-                 {stats.hasGeneral && (
-                     <div className="mt-3 mb-2 text-[10px] text-[#ffddd6] bg-white/10 px-3 py-2 rounded-lg border border-white/10 flex items-start gap-2">
-                        <span className="text-sm mt-[-1px]">⚠️</span>
-                        <span>提醒：一般妝髮不含假睫毛與飾品。</span>
-                     </div>
-                 )}
-
-                 {stats.isQuoteNeeded && (
-                     <div className="border-t border-white/20 pt-2 mt-2">
-                         <div className="text-[10px] text-[#e6e2dc] mb-1">其他需求將於確認後另行報價：</div>
-                         <div className="flex flex-wrap gap-2">
-                             {stats.quoteItems.map(item => (
-                                 <span key={item} className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded border border-white/10">{item}</span>
-                             ))}
-                         </div>
-                     </div>
-                 )}
+                 <div className="flex items-baseline gap-2 mb-2"><span className="text-3xl font-serif font-medium text-white">NT$ {stats.basePrice.toLocaleString()} {stats.isQuoteNeeded && <span className="text-sm font-sans ml-1 opacity-80">起</span>}</span></div>
+                 <div className="text-xs space-y-1 mb-2 text-[#f2f0eb] opacity-90">{Object.entries(data.quantities).map(([id, n]) => { const s = SERVICE_CATALOG.find(x => x.id === id); return s ? <div key={id}>• {s.name} x{n}</div> : null; })}{data.locationType.includes('工作室') && <div>• 工作室場地費</div>}</div>
+                 {stats.hasGeneral && (<div className="mt-3 mb-2 text-[10px] text-[#ffddd6] bg-white/10 px-3 py-2 rounded-lg border border-white/10 flex items-start gap-2"><span className="text-sm mt-[-1px]">⚠️</span><span>提醒：一般妝髮不含假睫毛與飾品。</span></div>)}
+                 {stats.isQuoteNeeded && (<div className="border-t border-white/20 pt-2 mt-2"><div className="text-[10px] text-[#e6e2dc] mb-1">其他需求將於確認後另行報價：</div><div className="flex flex-wrap gap-2">{stats.quoteItems.map(item => (<span key={item} className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded border border-white/10">{item}</span>))}</div></div>)}
              </div>
         </div>
 
-        <div className="mt-2 text-[10px] text-[#a8a4a0] text-center leading-relaxed px-2">
-            *以上為基本報價，實際費用將依人數、性質、地點與車馬費等調整，以 Harper 回覆為準。
-        </div>
+        <div className="mt-2 text-[10px] text-[#a8a4a0] text-center leading-relaxed px-2">*以上為基本報價，實際費用將依人數、性質、地點與車馬費等調整，以 Harper 回覆為準。</div>
 
+        {/* 底部聲明 */}
         <div className="space-y-3 pt-2">
             <div className="bg-stone-100 p-4 rounded-xl space-y-3">
                 <h4 className="text-sm font-bold text-[#5e5a56]">預約流程說明</h4>
@@ -597,48 +613,93 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
                     <p className="font-bold text-[#57534e]">預約需以 Harper 回覆確認並完成訂金後，才算正式成立並保留時段。</p>
                     <p>送出前也請再次確認填寫資料正確，以避免影響排程與報價。</p>
                 </div>
-                
                 <Label icon={Smile} text="同意條款勾選" />
-                <CheckBox
-                    checked={data.agreement1}
-                    onClick={(e) => setData({...data, agreement1: e.target.checked})}
-                    text="送出表單不代表預約成立，需回覆確認。"
-                />
-                <CheckBox
-                    checked={data.agreement2}
-                    onClick={(e) => setData({...data, agreement2: e.target.checked})}
-                    text="我已詳細閱讀「預約須知」並同意。"
-                />
-                <CheckBox
-                    checked={data.agreement3}
-                    onClick={(e) => setData({...data, agreement3: e.target.checked})}
-                    text="確認資料無誤。"
-                />
+                <CheckBox checked={data.agreement1} onClick={(e) => setData({...data, agreement1: e.target.checked})} text="送出表單不代表預約成立，需回覆確認。" />
+                <CheckBox checked={data.agreement2} onClick={(e) => setData({...data, agreement2: e.target.checked})} text="我已詳細閱讀「預約須知」並同意。" />
+                <CheckBox checked={data.agreement3} onClick={(e) => setData({...data, agreement3: e.target.checked})} text="確認資料無誤。" />
             </div>
-
-            <button type="submit" disabled={isSubmitting} className="w-full py-4 rounded-full bg-[#8c8680] text-white font-medium tracking-[0.1em] shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                {isSubmitting ? "傳送中..." : <>送出預約申請 <Send size={16} /></>}
-            </button>
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 rounded-full bg-[#8c8680] text-white font-medium tracking-[0.1em] shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">{isSubmitting ? "傳送中..." : <>送出預約申請 <Send size={16} /></>}</button>
         </div>
       </form>
     </div>
   );
 };
-
+// --- Modal (成功視窗：含複製與 IG 連結) ---
 const SuccessModal = ({ data, onClose }) => {
-  const copyText = `📋 Harper’s makeup｜預約申請\n\n姓名：${data.name}\n電話：${data.phone}\nIG：${data.instagram}\n\n用途：${data.purpose}\n內容：${data.serviceType}\n人數：女${data.peopleCountFemale} / 男${data.peopleCountMale}\n\n日期：${data.dates[0]}\n地點：${data.city} ${data.locationType}\n時間：${data.timeSlots.join('/')}\n完妝：${data.finishTimeH}:${data.finishTimeM}\n跟妝：${data.followUp}\n備註：${data.notes||'無'}\n\n估價：$${data.estimatedPrice}${data.isQuoteRequired ? ' 起 (含另行報價項目)' : ''}\n\n—\n麻煩幫我確認檔期與費用，謝謝！`;
+  // 組合要複製的文字內容
+  const copyText = `📋 Harper’s makeup｜預約申請資料\n\n姓名：${
+    data.name
+  }\n電話：${data.phone}\n\n活動類型：${
+    data.purpose
+  }\n方案：${data.serviceType}\n\n梳化地點：${data.city} ${
+    data.locationType
+  }\n是否跟妝：${data.followUp}\n\n日期：${data.dates
+    .filter((d) => d)
+    .join(",")}\n時段：${data.timeSlots.join(",")}\n最晚完妝：${
+    data.finishTimeH
+  }:${data.finishTimeM}\n\n人數：女${data.peopleCountFemale} 男${
+    data.peopleCountMale
+  }\n備註：${data.notes || "無"}\n\n—\n麻煩幫我確認檔期與費用，謝謝！`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(copyText);
+    alert("已複製！請貼上至 Instagram 私訊。");
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4 animate-fade-in">
       <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl space-y-5 glass-card">
-        <div className="text-center space-y-2"><div className="w-12 h-12 bg-[#f2f0eb] rounded-full flex items-center justify-center mx-auto mb-3"><MessageCircle className="text-[#8c8680] w-6 h-6" /></div><h3 className="text-lg font-bold text-[#5e5a56]">預約申請已建立</h3><p className="text-xs text-[#a8a4a0] leading-relaxed">請複製下方資料並 <span className="text-[#8c8680] font-bold underline">私訊傳送給 Harper</span><br/>確認檔期後才算完成喔！</p></div>
-        <div className="bg-[#faf9f6] p-4 rounded-xl text-[10px] text-[#5e5a56] leading-relaxed whitespace-pre-wrap font-mono border border-[#e6e2dc] max-h-40 overflow-y-auto">{copyText}</div>
-        <button onClick={()=>{navigator.clipboard.writeText(copyText); alert("已複製！");}} className="w-full py-3 rounded-xl bg-[#8c8680] text-white text-sm font-medium shadow-md flex items-center justify-center gap-2 active:scale-95 transition-transform"><Copy className="w-4 h-4" /> 一鍵複製</button>
-        <button onClick={onClose} className="w-full text-xs text-[#a8a4a0] py-2">關閉視窗</button>
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 bg-[#f2f0eb] rounded-full flex items-center justify-center mx-auto mb-3">
+            <MessageCircle className="text-[#8c8680] w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-[#5e5a56]">
+            預約申請只剩下最後一步
+          </h3>
+          <p className="text-xs text-[#a8a4a0] leading-relaxed">
+            請將資料{" "}
+            <span className="text-[#8c8680] font-bold underline">
+              完整複製並傳送給 Harper
+            </span>
+            ，<br />
+            方便確認檔期與費用後回覆 🤍
+          </p>
+        </div>
+        
+        {/* 預覽文字區 */}
+        <div className="bg-[#faf9f6] p-4 rounded-xl text-[10px] text-[#5e5a56] leading-relaxed whitespace-pre-wrap font-mono border border-[#e6e2dc] max-h-40 overflow-y-auto">
+          {copyText}
+        </div>
+
+        {/* 按鈕區 */}
+        <div className="space-y-3">
+          <button
+            onClick={handleCopy}
+            className="w-full py-3 rounded-xl bg-[#8c8680] text-white text-sm font-medium shadow-md flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            <Copy className="w-4 h-4" /> 一鍵複製文字
+          </button>
+          
+          <a
+            href="https://www.instagram.com/haharper_makeup?igsh=NG9wbnNrd2dtdDU2&utm_source=qr"
+            target="_blank"
+            rel="noreferrer" // 安全性設定
+            className="w-full py-3 rounded-xl border border-[#e6e2dc] text-[#5e5a56] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#faf9f6] transition-colors no-underline"
+          >
+            <Instagram className="w-4 h-4" /> 前往 Instagram 私訊
+          </a>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full text-xs text-[#a8a4a0] py-2"
+        >
+          關閉視窗
+        </button>
       </div>
     </div>
   );
 };
-
 const AdminDashboard = ({ onExit, isReady, db }) => {
   const [data, setData] = useState([]);
   const [pass, setPass] = useState("");
