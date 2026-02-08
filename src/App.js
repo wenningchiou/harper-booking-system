@@ -37,84 +37,18 @@ import {
 } from "firebase/firestore";
 
 // --- 1. 服務方案資料庫 ---
-// --- 1. 服務方案資料庫 (已新增方案介紹小字) ---
 const SERVICE_CATALOG = [
-  // --- 一般 / 寫真 / 活動 / 其他 ---
-  { 
-    id: 'gen_single', 
-    name: '一般單妝容', 
-    price: 1500, 
-    type: 'female', 
-    category: 'standard', 
-    desc: '自然乾淨的氣色妝容。不含假睫毛、妝面飾品與髮型設計。' 
-  },
-  { 
-    id: 'gen_full', 
-    name: '一般妝髮方案', 
-    price: 2000, 
-    type: 'female', 
-    category: 'standard', 
-    desc: '自然乾淨的氣色妝容＋簡約髮型整理，適合日常聚會、證件照與面試。' 
-  },
-  { 
-    id: 'exq_single', 
-    name: '精緻單妝容', 
-    price: 2000, 
-    type: 'female', 
-    category: 'standard', 
-    desc: '加強妝面細緻度與眼妝層次，妝感更完整。不含髮型設計。' 
-  },
-  { 
-    id: 'exq_full', 
-    name: '精緻妝髮方案', 
-    price: 2500, 
-    type: 'female', 
-    category: 'standard', 
-    desc: '提升底妝細緻度、眼妝層次與整體持妝表現，妝感更上鏡、更精緻。' 
-  },
-  { 
-    id: 'men_std', 
-    name: '男士妝髮', 
-    price: 1500, 
-    type: 'male', 
-    category: 'standard', 
-    desc: '基礎底妝、眉型修整、髮型吹整。' 
-  },
-
-  // --- 結婚登記專屬 ---
-  { 
-    id: 'bride_reg', 
-    name: '新娘登記妝髮', 
-    price: 2800, 
-    type: 'female', 
-    category: 'registration', 
-    desc: '穩定、自然，符合登記需求的專業妝髮服務。不含複雜編髮與妝面飾品。' 
-  },
-  { 
-    id: 'bride_pro', 
-    name: '新娘登記妝髮 PRO', 
-    price: 3200, 
-    type: 'female', 
-    category: 'registration', 
-    desc: '為拍攝／上鏡與重要紀錄設計的進階方案；髮型可依需求設計複雜編髮並可搭配造型飾品。' 
-  },
-  { 
-    id: 'groom', 
-    name: '新郎妝髮', 
-    price: 1500, 
-    type: 'male', 
-    category: 'registration', 
-    desc: '男士基礎底妝、眉型修整與髮型吹整。' 
-  },
-  { 
-    id: 'family', 
-    name: '親友妝髮', 
-    price: 2000, 
-    type: 'female', 
-    category: 'registration', 
-    desc: '親友適用之自然氣色妝容與髮型。' 
-  },
+  { id: 'gen_single', name: '一般單妝容', price: 1500, type: 'female', category: 'standard', desc: '自然乾淨的氣色妝容。不含假睫毛、妝面飾品與髮型設計。' },
+  { id: 'gen_full', name: '一般妝髮方案', price: 2000, type: 'female', category: 'standard', desc: '自然乾淨的氣色妝容＋簡約髮型整理，適合日常聚會、證件照與面試。' },
+  { id: 'exq_single', name: '精緻單妝容', price: 2000, type: 'female', category: 'standard', desc: '加強妝面細緻度與眼妝層次，妝感更完整。不含髮型設計。' },
+  { id: 'exq_full', name: '精緻妝髮方案', price: 2500, type: 'female', category: 'standard', desc: '提升底妝細緻度、眼妝層次與整體持妝表現，妝感更上鏡、更精緻。' },
+  { id: 'men_std', name: '男士妝髮', price: 1500, type: 'male', category: 'standard', desc: '基礎底妝、眉型修整、髮型吹整。' },
+  { id: 'bride_reg', name: '新娘登記妝髮', price: 2800, type: 'female', category: 'registration', desc: '穩定、自然，符合登記需求的專業妝髮服務。不含複雜編髮與妝面飾品。' },
+  { id: 'bride_pro', name: '新娘登記妝髮 PRO', price: 3200, type: 'female', category: 'registration', desc: '為拍攝／上鏡與重要紀錄設計的進階方案；髮型可依需求設計複雜編髮並可搭配造型飾品。' },
+  { id: 'groom', name: '新郎妝髮', price: 1500, type: 'male', category: 'registration', desc: '男士基礎底妝、眉型修整與髮型吹整。' },
+  { id: 'family', name: '親友妝容', price: 2000, type: 'female', category: 'registration', desc: '親友觀禮適用之自然氣色妝容（不含髮型）。' },
 ];
+
 // --- 2. 用途分類 ---
 const USAGE_TYPES = [
   { id: 'date_id', label: '約會 / 證件形象照', mode: 'standard' },
@@ -270,15 +204,12 @@ const NavBtn = ({ icon: Icon, label, active, onClick }) => (
 
 const HomeSection = ({ onChangeTab }) => (
   <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-8">
-    {/* LOGO 區塊 (保持不變) */}
     <div className="relative">
       <div className="w-40 h-40 rounded-full border border-[#e6e2dc] flex items-center justify-center relative z-10 bg-gradient-to-br from-white to-[#f2f0eb] shadow-inner">
         <span className="font-serif text-6xl text-[#8c8680] italic">H</span>
       </div>
       <div className="absolute inset-0 bg-[#e6e2dc] rounded-full blur-2xl opacity-40 animate-pulse"></div>
     </div>
-
-    {/* 標題文字 (保持不變) */}
     <div className="space-y-3">
       <h2 className="text-3xl font-serif tracking-[0.2em] text-[#5e5a56]">
         Harper's
@@ -288,18 +219,13 @@ const HomeSection = ({ onChangeTab }) => (
         Clean beauty, just for you
       </p>
     </div>
-
-    {/* 🆕 按鈕區塊：新增了價目表按鈕 */}
     <div className="flex items-center gap-4">
-      {/* 實心按鈕：立即預約 */}
       <button
         onClick={() => onChangeTab("booking")}
         className="px-8 py-3 rounded-full bg-[#8c8680] text-white tracking-[0.15em] text-xs font-bold shadow-lg shadow-[#8c8680]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
       >
         立即預約
       </button>
-
-      {/* 線框按鈕：價目表 */}
       <button
         onClick={() => onChangeTab("pricing")}
         className="px-8 py-3 rounded-full border border-[#8c8680] text-[#8c8680] bg-transparent tracking-[0.15em] text-xs font-bold hover:bg-[#8c8680] hover:text-white hover:shadow-lg transition-all duration-300"
@@ -309,6 +235,7 @@ const HomeSection = ({ onChangeTab }) => (
     </div>
   </div>
 );
+
 const ServiceSection = () => (
   <div className="space-y-6 pb-20">
     <SectionHeader title="About Harper" subtitle="服務介紹" />
@@ -337,7 +264,7 @@ const PriceSection = () => (
           <PriceRow label="新娘登記妝髮" price="2,800" desc={`穩定、自然、符合登記需求的專業妝髮服務\n髮型以基礎髮型為主（不含複雜編髮與妝面飾品）`} />
           <PriceRow label="新娘登記妝髮Pro" price="3,200" desc={`針對拍攝、上鏡與重要紀錄需求所設計的進階方案\n髮型可依造型需求設計複雜編髮，整體完成度更高\n可搭配造型飾品`} />
           <PriceRow label="新郎妝髮" price="1,500" />
-          <PriceRow label="親友妝髮" price="2,000" />
+          <PriceRow label="親友妝容" price="2,000" />
         </div>
       </div>
       <div className="p-5 rounded-2xl border border-dashed border-[#d4cfc9] text-center bg-[#fcfbf9]"><h3 className="text-sm font-medium text-[#5e5a56] flex items-center justify-center gap-2 mb-1"><Sparkles size={16} /> 婚禮 / 新秘服務</h3><p className="text-xs text-[#a8a4a0]">請填寫預約單，將依需求另行報價</p></div>
@@ -348,46 +275,16 @@ const PriceSection = () => (
 const FaqSection = () => {
   const [idx, setIdx] = useState(null);
   const faqs = [
-    {
-      q: "一般妝髮和精緻妝髮差在哪？",
-      a: (<>兩者主要差別在於妝面的細節處理與完整度。<br/>一般妝髮以自然、乾淨為主，適合聚會或不需強烈上鏡的場合；<br/>精緻妝髮則會加強底妝細緻度、眼妝層次與整體持妝表現，更適合拍攝、重要活動或希望妝感更完整的需求。<br/><br/><span className="font-bold text-[#9f5f5f]">另外，一般妝髮方案不包含假睫毛及貼鑽、緞帶等妝面飾品。<br/>若有假睫毛或妝面飾品的需求，請選擇精緻妝髮方案唷 🤍</span></>),
-    },
-    {
-      q: "婚禮／結婚登記可以選一般妝髮方案嗎？",
-      a: (<><span className="font-bold text-[#9f5f5f]">不建議，也無法適用。</span><br/>婚禮／結婚登記屬於時間不可延誤、會被大量拍攝紀錄的重要場合，對妝容的細緻度、持妝穩定度與流程安排要求更高，才能確保當天呈現與服務品質。</>),
-    },
-    {
-      q: "送出預約表單就算預約成功了嗎？",
-      a: (<>還不算。<br/><span className="font-bold text-[#5e5a56]">送出表單僅代表「提出預約申請」</span>，需經 Harper 確認檔期、回覆報價並完成訂金付款後，預約才算正式成立。</>),
-    },
-    {
-      q: "訂金是多少？什麼時候要付？",
-      a: (<>訂金為每位 NT$500，<br/>例如梳化人數為 2 位，訂金即為 NT$1000，以此類推。<br/>完成訂金付款並收到 Harper 回覆確認後，才會為您保留時段。</>),
-    },
-    {
-      q: "可以改期或取消嗎？",
-      a: (<>可以。<br/>因事改期請於至少 3 天前告知，並以一次為限。<br/>若場地租借空間無法退款，將由訂金中扣除相關費用後退回餘款。<br/><span className="font-bold text-[#9f5f5f]">請勿於當天臨時取消或未到，訂金恕不退回，敬請理解。</span></>),
-    },
-    {
-      q: "到府梳化會加收費用嗎？",
-      a: (<>會。<br/>到府梳化之車馬費將依距離、時段與地點另行報價，實際費用將以 Harper 回覆確認為準。</>),
-    },
-    {
-      q: "跟妝一定要加購嗎？",
-      a: (<>不一定。<br/>是否需要跟妝會依活動性質、時數與現場狀況評估。<br/>若不確定是否有跟妝需求，也可以請 Harper 協助評估是否需要加購。</>),
-    },
-    {
-      q: "如果我臨時會遲到怎麼辦？",
-      a: (<>當然希望大家都能準時抵達開妝，但路況或突發狀況難免發生。<br/>若確定會晚到，請提前告知，讓我可以協助調整流程。<br/>若因遲到影響可服務時間，妝髮完整度將以不影響下一位客人為前提進行調整，敬請見諒。</>),
-    },
-    {
-      q: "有皮膚敏感、針眼或近期醫美可以化妝嗎？",
-      a: (<>請務必事先告知。<br/>如有針眼、皮膚病、過敏或近期醫美療程，Harper 會評估是否適合上妝，必要時也會建議改期，以保障您與其他客人的健康與安全。</>),
-    },
-    {
-      q: "可以指定妝感或提供參考圖嗎？",
-      a: (<>可以。<br/>建議於梳化前提供 1–3 張妝感或造型參考圖。<br/>若沒有明確想法，也非常歡迎提供當天服裝或整體風格，讓我一起和你討論並給予建議 ❤️<br/>Harper 會依您的五官比例、膚況與活動需求，調整出最適合您的妝容風格。</>),
-    },
+    { q: "一般妝髮和精緻妝髮差在哪？", a: (<>兩者主要差別在於妝面的細節處理與完整度。<br/>一般妝髮以自然、乾淨為主，適合聚會或不需強烈上鏡的場合；<br/>精緻妝髮則會加強底妝細緻度、眼妝層次與整體持妝表現，更適合拍攝、重要活動或希望妝感更完整的需求。<br/><br/><span className="font-bold text-[#9f5f5f]">另外，一般妝髮方案不包含假睫毛及貼鑽、緞帶等妝面飾品。<br/>若有假睫毛或妝面飾品的需求，請選擇精緻妝髮方案唷 🤍</span></>) },
+    { q: "婚禮／結婚登記可以選一般妝髮方案嗎？", a: (<><span className="font-bold text-[#9f5f5f]">不建議，也無法適用。</span><br/>婚禮／結婚登記屬於時間不可延誤、會被大量拍攝紀錄的重要場合，對妝容的細緻度、持妝穩定度與流程安排要求更高，才能確保當天呈現與服務品質。</>) },
+    { q: "送出預約表單就算預約成功了嗎？", a: (<>還不算。<br/><span className="font-bold text-[#5e5a56]">送出表單僅代表「提出預約申請」</span>，需經 Harper 確認檔期、回覆報價並完成訂金付款後，預約才算正式成立。</>) },
+    { q: "訂金是多少？什麼時候要付？", a: (<>訂金為每位 NT$500，<br/>例如梳化人數為 2 位，訂金即為 NT$1000，以此類推。<br/>完成訂金付款並收到 Harper 回覆確認後，才會為您保留時段。</>) },
+    { q: "可以改期或取消嗎？", a: (<>可以。<br/>因事改期請於至少 3 天前告知，並以一次為限。<br/>若場地租借空間無法退款，將由訂金中扣除相關費用後退回餘款。<br/><span className="font-bold text-[#9f5f5f]">請勿於當天臨時取消或未到，訂金恕不退回，敬請理解。</span></>) },
+    { q: "到府梳化會加收費用嗎？", a: (<>會。<br/>到府梳化之車馬費將依距離、時段與地點另行報價，實際費用將以 Harper 回覆確認為準。</>) },
+    { q: "跟妝一定要加購嗎？", a: (<>不一定。<br/>是否需要跟妝會依活動性質、時數與現場狀況評估。<br/>若不確定是否有跟妝需求，也可以請 Harper 協助評估是否需要加購。</>) },
+    { q: "如果我臨時會遲到怎麼辦？", a: (<>當然希望大家都能準時抵達開妝，但路況或突發狀況難免發生。<br/>若確定會晚到，請提前告知，讓我可以協助調整流程。<br/>若因遲到影響可服務時間，妝髮完整度將以不影響下一位客人為前提進行調整，敬請見諒。</>) },
+    { q: "有皮膚敏感、針眼或近期醫美可以化妝嗎？", a: (<>請務必事先告知。<br/>如有針眼、皮膚病、過敏或近期醫美療程，Harper 會評估是否適合上妝，必要時也會建議改期，以保障您與其他客人的健康與安全。</>) },
+    { q: "可以指定妝感或提供參考圖嗎？", a: (<>可以。<br/>建議於梳化前提供 1–3 張妝感或造型參考圖。<br/>若沒有明確想法，也非常歡迎提供當天服裝或整體風格，讓我一起和你討論並給予建議 ❤️<br/>Harper 會依您的五官比例、膚況與活動需求，調整出最適合您的妝容風格。</>) },
   ];
   return (
     <div className="space-y-6 pb-20">
@@ -395,10 +292,7 @@ const FaqSection = () => {
       <div className="space-y-3">
         {faqs.map((f, i) => (
           <div key={i} className="bg-white rounded-2xl border border-[#e6e2dc] overflow-hidden">
-            <button onClick={() => setIdx(idx === i ? null : i)} className="w-full px-6 py-4 text-left flex justify-between items-center group">
-              <span className="text-sm font-medium text-[#5e5a56] pr-4">{f.q}</span>
-              {idx === i ? <ChevronUp size={16} className="text-[#8c8680]" /> : <ChevronDown size={16} className="text-[#d4cfc9]" />}
-            </button>
+            <button onClick={() => setIdx(idx === i ? null : i)} className="w-full px-6 py-4 text-left flex justify-between items-center group"><span className="text-sm font-medium text-[#5e5a56] pr-4">{f.q}</span>{idx === i ? <ChevronUp size={16} className="text-[#8c8680]" /> : <ChevronDown size={16} className="text-[#d4cfc9]" />}</button>
             {idx === i && <div className="px-6 pb-6 pt-0 text-xs text-[#8c8680] leading-relaxed pl-9"><div className="h-px w-full bg-[#fcfbf9] mb-3"></div>{f.a}</div>}
           </div>
         ))}
@@ -436,8 +330,6 @@ const RulesSection = () => {
   );
 };
 
-// --- 核心組件：BookingForm (已加入日期防呆機制) ---
-// --- 核心組件：BookingForm (含方案介紹與動態熱門標籤) ---
 const BookingForm = ({ onSubmit, isSubmitting }) => {
   const [data, setData] = useState({
     name: "", phone: "", instagram: "",
@@ -749,31 +641,299 @@ const BookingForm = ({ onSubmit, isSubmitting }) => {
       </form>
     </div>
   );
-};const AdminDashboard = ({ onExit, isReady, db }) => {
+};
+
+// --- Modal, Admin, Helper Components (已更新為含 IG 連結版本) ---
+const SuccessModal = ({ data, onClose }) => {
+  const copyText = `📋 Harper’s makeup｜預約申請資料\n\n姓名：${
+    data.name
+  }\n電話：${data.phone}\n\n活動類型：${
+    data.purpose
+  }\n方案：${data.serviceType}\n\n梳化地點：${data.city} ${
+    data.locationType
+  }\n是否跟妝：${data.followUp}\n\n日期：${data.dates
+    .filter((d) => d)
+    .join(",")}\n時段：${data.timeSlots.join(",")}\n最晚完妝：${
+    data.finishTimeH
+  }:${data.finishTimeM}\n\n人數：女${data.peopleCountFemale} 男${
+    data.peopleCountMale
+  }\n備註：${data.notes || "無"}\n\n—\n麻煩幫我確認檔期與費用，謝謝！`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(copyText);
+    alert("已複製！請貼上至 Instagram 私訊。");
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4 animate-fade-in">
+      <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl space-y-5 glass-card">
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 bg-[#f2f0eb] rounded-full flex items-center justify-center mx-auto mb-3">
+            <MessageCircle className="text-[#8c8680] w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-[#5e5a56]">
+            預約申請只剩下最後一步
+          </h3>
+          <p className="text-xs text-[#a8a4a0] leading-relaxed">
+            請將資料{" "}
+            <span className="text-[#8c8680] font-bold underline">
+              完整複製並傳送給 Harper
+            </span>
+            ，<br />
+            方便確認檔期與費用後回覆 🤍
+          </p>
+        </div>
+        <div className="bg-[#faf9f6] p-4 rounded-xl text-[10px] text-[#5e5a56] leading-relaxed whitespace-pre-wrap font-mono border border-[#e6e2dc] max-h-40 overflow-y-auto">
+          {copyText}
+        </div>
+        <div className="space-y-3">
+          <button
+            onClick={handleCopy}
+            className="w-full py-3 rounded-xl bg-[#8c8680] text-white text-sm font-medium shadow-md flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            <Copy className="w-4 h-4" /> 一鍵複製文字
+          </button>
+          <a
+            href="https://www.instagram.com/haharper_makeup?igsh=NG9wbnNrd2dtdDU2&utm_source=qr"
+            target="_blank"
+            rel="noreferrer"
+            className="w-full py-3 rounded-xl border border-[#e6e2dc] text-[#5e5a56] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#faf9f6] transition-colors"
+          >
+            <Instagram className="w-4 h-4" /> 前往 Instagram 私訊
+          </a>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-full text-xs text-[#a8a4a0] py-2"
+        >
+          關閉視窗
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboard = ({ onExit, isReady, db }) => {
   const [data, setData] = useState([]);
   const [pass, setPass] = useState("");
   const [auth, setAuth] = useState(false);
   useEffect(() => {
     if (!auth || !isReady) return;
-    const q = query(collection(db, "public_appointments"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (ss) => setData(ss.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    const q = query(
+      collection(db, "public_appointments"),
+      orderBy("createdAt", "desc")
+    );
+    onSnapshot(q, (ss) =>
+      setData(ss.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
   }, [auth, isReady]);
-  const deleteItem = async (id) => { if (window.confirm("確定要刪除這筆預約嗎？刪除後無法復原喔！")) await deleteDoc(doc(db, "public_appointments", id)); };
-  if (!isReady) return <div className="h-screen flex items-center justify-center text-xs text-red-400">尚未設定資料庫</div>;
-  if (!auth) return <div className="h-[60vh] flex flex-col items-center justify-center gap-4 animate-fade-in"><div className="w-16 h-16 bg-[#faf9f6] rounded-full flex items-center justify-center border border-[#e6e2dc]"><Lock className="w-6 h-6 text-[#8c8680]" /></div><h3 className="text-lg font-bold text-[#5e5a56]">Harper's Backend</h3><input type="password" value={pass} onChange={(e) => setPass(e.target.value)} className="p-3 text-center border border-[#e6e2dc] rounded-xl outline-none focus:border-[#8c8680] bg-[#faf9f6] w-64" placeholder="請輸入管理密碼" /><button onClick={() => pass === "harper1132001" ? setAuth(true) : alert("密碼錯誤")} className="bg-[#8c8680] text-white px-8 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all">登入系統</button><button onClick={onExit} className="text-xs text-[#a8a4a0] hover:text-[#5e5a56]">回前台首頁</button></div>;
+
+  const deleteItem = async (id) => {
+    if (window.confirm("確定要刪除這筆預約嗎？刪除後無法復原喔！"))
+      await deleteDoc(doc(db, "public_appointments", id));
+  };
+
+  if (!isReady)
+    return (
+      <div className="h-screen flex items-center justify-center text-xs text-red-400">
+        尚未設定資料庫
+      </div>
+    );
+
+  // 登入畫面
+  if (!auth)
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 animate-fade-in">
+        <div className="w-16 h-16 bg-[#faf9f6] rounded-full flex items-center justify-center border border-[#e6e2dc]">
+          <Lock className="w-6 h-6 text-[#8c8680]" />
+        </div>
+        <h3 className="text-lg font-bold text-[#5e5a56]">Harper's Backend</h3>
+        <input
+          type="password"
+          value={pass}
+          onChange={(e) => setPass(e.target.value)}
+          className="p-3 text-center border border-[#e6e2dc] rounded-xl outline-none focus:border-[#8c8680] bg-[#faf9f6] w-64"
+          placeholder="請輸入管理密碼"
+        />
+        <button
+          onClick={() =>
+            pass === "harper1132001" ? setAuth(true) : alert("密碼錯誤")
+          }
+          className="bg-[#8c8680] text-white px-8 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all"
+        >
+          登入系統
+        </button>
+        <button
+          onClick={onExit}
+          className="text-xs text-[#a8a4a0] hover:text-[#5e5a56]"
+        >
+          回前台首頁
+        </button>
+      </div>
+    );
+
+  // 登入後的詳細清單
   return (
     <div className="max-w-xl mx-auto pb-24 pt-10 px-5 font-sans">
-      <div className="flex justify-between items-center mb-6"><div><h2 className="text-2xl font-bold text-[#5e5a56]">預約管理</h2><p className="text-xs text-[#a8a4a0] mt-1">目前共有 <span className="font-bold text-[#8c8680]">{data.length}</span> 筆資料</p></div><button onClick={onExit} className="text-xs bg-white border border-[#e6e2dc] text-[#5e5a56] px-4 py-2 rounded-full shadow-sm hover:bg-[#faf9f6]">登出</button></div>
-      <div className="space-y-6">{data.map((item) => (<div key={item.id} className="bg-white p-6 rounded-[2rem] border border-[#e6e2dc] shadow-sm relative overflow-hidden group hover:shadow-md transition-all"><button onClick={() => deleteItem(item.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-400 p-2 z-10"><Trash2 size={18} /></button><div className="border-b border-[#f2f0eb] pb-4 mb-4"><div className="flex items-center gap-2 mb-1"><span className="text-[10px] bg-[#8c8680] text-white px-2 py-0.5 rounded">{item.purpose || "未分類"}</span><span className="text-[10px] text-[#a8a4a0]">填單時間：{item.createdAt?.toDate ? new Date(item.createdAt.toDate()).toLocaleString() : "剛剛"}</span></div><div className="text-xl font-bold text-[#5e5a56] flex items-center gap-2">{item.name}<span className="text-sm font-normal text-[#a8a4a0]">{item.phone}</span></div><a href={`https://instagram.com/${item.instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1"><Instagram size={12} /> {item.instagram}</a></div><div className="grid grid-cols-2 gap-3 mb-4"><div className="bg-[#faf9f6] p-3 rounded-xl border border-[#f2f0eb]"><div className="text-[10px] font-bold text-[#a8a4a0] mb-1 flex items-center gap-1"><Calendar size={10} /> DATES</div><div className="text-sm font-bold text-[#5e5a56]">{item.dates[0]} <span className="text-[10px] font-normal text-red-400">(首選)</span></div>{(item.dates[1] || item.dates[2]) && (<div className="text-[10px] text-[#8c8680] mt-1 border-t border-[#e6e2dc] pt-1">候: {item.dates[1]} {item.dates[2] ? `、${item.dates[2]}` : ""}</div>)}</div><div className="bg-[#faf9f6] p-3 rounded-xl border border-[#f2f0eb]"><div className="text-[10px] font-bold text-[#a8a4a0] mb-1 flex items-center gap-1"><Users size={10} /> STATS</div><div className="text-sm font-bold text-[#5e5a56]">女{item.peopleCountFemale} / 男{item.peopleCountMale}</div><div className="text-[10px] text-[#8c8680] mt-1 border-t border-[#e6e2dc] pt-1 font-bold">估: ${item.estimatedPrice?.toLocaleString()}{item.isQuoteRequired && " 起"}</div></div></div><div className="space-y-3 text-xs text-[#5e5a56]"><div className="flex gap-2"><span className="font-bold text-[#8c8680] min-w-[3em]">方案：</span><span className="bg-stone-100 px-2 py-0.5 rounded text-stone-600 leading-relaxed">{item.serviceType}</span></div><div className="flex gap-2"><span className="font-bold text-[#8c8680] min-w-[3em]">地點：</span><span>{item.city} - {item.locationType}</span></div><div className="flex gap-2"><span className="font-bold text-[#8c8680] min-w-[3em]">時段：</span><div className="flex flex-col gap-1"><span>{item.timeSlots?.join("、")}</span>{item.timeSlots?.includes("凌晨 (07:00前)") && (<span className="text-orange-600 font-bold bg-orange-50 px-1 rounded inline-block w-fit">⚠️ 包含凌晨時段</span>)}</div></div><div className="flex gap-2"><span className="font-bold text-[#8c8680] min-w-[3em]">細節：</span><span>最晚 <span className="font-bold">{item.finishTimeH}:{item.finishTimeM}</span> 完妝 ｜ 跟妝：<span className={item.followUp?.includes("不需要") ? "" : "text-pink-600 font-bold"}>{item.followUp}</span></span></div></div>{item.notes && (<div className="mt-4 bg-orange-50 p-3 rounded-xl border border-orange-100 text-xs text-[#8c6b5d] leading-relaxed"><span className="font-bold mb-1 block">📝 客人備註：</span>{item.notes}</div>)}</div>))}</div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-[#5e5a56]">預約管理</h2>
+          <p className="text-xs text-[#a8a4a0] mt-1">
+            目前共有 <span className="font-bold text-[#8c8680]">{data.length}</span> 筆資料
+          </p>
+        </div>
+        <button
+          onClick={onExit}
+          className="text-xs bg-white border border-[#e6e2dc] text-[#5e5a56] px-4 py-2 rounded-full shadow-sm hover:bg-[#faf9f6]"
+        >
+          登出
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        {data.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white p-6 rounded-[2rem] border border-[#e6e2dc] shadow-sm relative overflow-hidden group hover:shadow-md transition-all"
+          >
+            {/* 刪除按鈕 */}
+            <button
+              onClick={() => deleteItem(item.id)}
+              className="absolute top-4 right-4 text-gray-300 hover:text-red-400 p-2 z-10"
+            >
+              <Trash2 size={18} />
+            </button>
+
+            {/* 1. 客戶基本資料區 */}
+            <div className="border-b border-[#f2f0eb] pb-4 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] bg-[#8c8680] text-white px-2 py-0.5 rounded">
+                  {item.purpose || "未分類"}
+                </span>
+                <span className="text-[10px] text-[#a8a4a0]">
+                  填單時間：
+                  {item.createdAt?.toDate
+                    ? new Date(item.createdAt.toDate()).toLocaleString()
+                    : "剛剛"}
+                </span>
+              </div>
+              <div className="text-xl font-bold text-[#5e5a56] flex items-center gap-2">
+                {item.name}
+                <span className="text-sm font-normal text-[#a8a4a0]">
+                  {item.phone}
+                </span>
+              </div>
+              {/* IG 連結 */}
+              <a
+                href={`https://instagram.com/${item.instagram.replace("@", "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1"
+              >
+                <Instagram size={12} /> {item.instagram}
+              </a>
+            </div>
+
+            {/* 2. 關鍵資訊 Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* 日期與時間 */}
+              <div className="bg-[#faf9f6] p-3 rounded-xl border border-[#f2f0eb]">
+                <div className="text-[10px] font-bold text-[#a8a4a0] mb-1 flex items-center gap-1">
+                  <Calendar size={10} /> DATES
+                </div>
+                <div className="text-sm font-bold text-[#5e5a56]">
+                  {item.dates[0]} <span className="text-[10px] font-normal text-red-400">(首選)</span>
+                </div>
+                {(item.dates[1] || item.dates[2]) && (
+                  <div className="text-[10px] text-[#8c8680] mt-1 border-t border-[#e6e2dc] pt-1">
+                    候: {item.dates[1]} {item.dates[2] ? `、${item.dates[2]}` : ""}
+                  </div>
+                )}
+              </div>
+
+              {/* 人數與價格 */}
+              <div className="bg-[#faf9f6] p-3 rounded-xl border border-[#f2f0eb]">
+                <div className="text-[10px] font-bold text-[#a8a4a0] mb-1 flex items-center gap-1">
+                  <Users size={10} /> STATS
+                </div>
+                <div className="text-sm font-bold text-[#5e5a56]">
+                  女{item.peopleCountFemale} / 男{item.peopleCountMale}
+                </div>
+                <div className="text-[10px] text-[#8c8680] mt-1 border-t border-[#e6e2dc] pt-1 font-bold">
+                  估: ${item.estimatedPrice?.toLocaleString()}
+                  {item.isQuoteRequired && " 起"}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. 詳細服務內容清單 */}
+            <div className="space-y-3 text-xs text-[#5e5a56]">
+              {/* 服務項目 */}
+              <div className="flex gap-2">
+                <span className="font-bold text-[#8c8680] min-w-[3em]">方案：</span>
+                <span className="bg-stone-100 px-2 py-0.5 rounded text-stone-600 leading-relaxed">
+                  {item.serviceType}
+                </span>
+              </div>
+
+              {/* 地點詳情 */}
+              <div className="flex gap-2">
+                <span className="font-bold text-[#8c8680] min-w-[3em]">地點：</span>
+                <span>
+                  {item.city} - {item.locationType}
+                </span>
+              </div>
+
+              {/* 時間詳情 */}
+              <div className="flex gap-2">
+                <span className="font-bold text-[#8c8680] min-w-[3em]">時段：</span>
+                <div className="flex flex-col gap-1">
+                    <span>{item.timeSlots?.join("、")}</span>
+                    {item.timeSlots?.includes("凌晨 (07:00前)") && (
+                        <span className="text-orange-600 font-bold bg-orange-50 px-1 rounded inline-block w-fit">⚠️ 包含凌晨時段</span>
+                    )}
+                </div>
+              </div>
+
+              {/* 完妝與跟妝 */}
+              <div className="flex gap-2">
+                <span className="font-bold text-[#8c8680] min-w-[3em]">細節：</span>
+                <span>
+                  最晚 <span className="font-bold">{item.finishTimeH}:{item.finishTimeM}</span> 完妝
+                  ｜ 跟妝：<span className={item.followUp?.includes("不需要") ? "" : "text-pink-600 font-bold"}>{item.followUp}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* 4. 備註區塊 (有寫才顯示) */}
+            {item.notes && (
+              <div className="mt-4 bg-orange-50 p-3 rounded-xl border border-orange-100 text-xs text-[#8c6b5d] leading-relaxed">
+                <span className="font-bold mb-1 block">📝 客人備註：</span>
+                {item.notes}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
-
 const SectionHeader = ({ title, subtitle }) => <div className="text-center mb-6"><h4 className="text-[10px] font-bold tracking-[0.2em] text-[#d4cfc9] uppercase mb-1">{title}</h4><h2 className="text-xl font-serif font-medium text-[#5e5a56] tracking-wide">{subtitle}</h2></div>;
 const CategoryHeader = ({ title }) => <div className="flex items-center gap-4 px-2"><span className="h-px flex-1 bg-[#e6e2dc]"></span><span className="text-[10px] font-bold text-[#a8a4a0] tracking-[0.2em]">{title}</span><span className="h-px flex-1 bg-[#e6e2dc]"></span></div>;
 const PriceCard = ({ title, price, desc, highlight, warning }) => <div className={`relative p-5 rounded-2xl border transition-all ${highlight ? "bg-white border-[#d4cfc9] shadow-sm" : "bg-white/50 border-transparent hover:bg-white"}`}>{highlight && <span className="absolute top-0 right-0 bg-[#8c8680] text-white text-[10px] px-3 py-1 rounded-bl-xl rounded-tr-xl">POPULAR</span>}<div className="flex justify-between items-baseline mb-2"><h3 className="text-base font-medium text-[#5e5a56]">{title}</h3><span className="text-lg font-serif text-[#8c8680]">NT$ {price}</span></div><p className="text-xs text-[#a8a4a0] leading-relaxed">{desc}</p>{warning && <div className="mt-2 text-[10px] text-orange-800 bg-orange-50 p-2 rounded">{warning}</div>}</div>;
-const PriceRow = ({ label, price, desc }) => (<div className="border-b border-[#f2f0eb] last:border-0 pb-3 last:pb-0"><div className="flex justify-between items-baseline mb-1"><span className="text-sm font-bold text-[#5e5a56]">{label}</span><span className="font-serif text-[#8c8680]">NT$ {price}</span></div>{desc && (<p className="text-[10px] text-[#a8a4a0] leading-relaxed whitespace-pre-wrap pl-1">{desc}</p>)}</div>);
-const InputBox = ({ icon: Icon, label, required, value, onChange, ph }) => <div className="space-y-1"><label className="text-xs font-bold text-[#8c8680] pl-1 flex items-center gap-2"><Icon size={12} /> {label} {required && "*"}</label><div className="bg-[#faf9f6] p-3 rounded-xl border border-transparent focus-within:border-[#d4cfc9] focus-within:bg-white transition-all"><input type="text" required={required} value={value} onChange={(e) => onChange(e.target.value)} className="w-full outline-none text-[#5e5a56] text-sm bg-transparent placeholder:text-[#d4cfc9]" placeholder={ph} /></div></div>;
+const PriceRow = ({ label, price, desc }) => (
+  <div className="border-b border-[#f2f0eb] last:border-0 pb-3 last:pb-0">
+    <div className="flex justify-between items-baseline mb-1">
+      <span className="text-sm font-bold text-[#5e5a56]">{label}</span>
+      <span className="font-serif text-[#8c8680]">NT$ {price}</span>
+    </div>
+    {desc && (
+      <p className="text-[10px] text-[#a8a4a0] leading-relaxed whitespace-pre-wrap pl-1">
+        {desc}
+      </p>
+    )}
+  </div>
+);const InputBox = ({ icon: Icon, label, required, value, onChange, ph }) => <div className="space-y-1"><label className="text-xs font-bold text-[#8c8680] pl-1 flex items-center gap-2"><Icon size={12} /> {label} {required && "*"}</label><div className="bg-[#faf9f6] p-3 rounded-xl border border-transparent focus-within:border-[#d4cfc9] focus-within:bg-white transition-all"><input type="text" required={required} value={value} onChange={(e) => onChange(e.target.value)} className="w-full outline-none text-[#5e5a56] text-sm bg-transparent placeholder:text-[#d4cfc9]" placeholder={ph} /></div></div>;
 const Label = ({ icon: Icon, text }) => <label className="text-xs font-bold text-[#8c8680] pl-1 flex items-center gap-2 mb-1"><Icon size={12} /> {text}</label>;
 const SelectBadge = ({ active, onClick, children }) => <button type="button" onClick={onClick} className={`p-3 rounded-xl border text-center text-xs cursor-pointer transition-all w-full ${active ? "bg-[#8c8680] text-white border-[#8c8680]" : "bg-[#faf9f6] text-[#5e5a56] border-[#e6e2dc]"}`}>{children}</button>;
 const RadioBox = ({ checked, onClick, title, subtitle }) => <div onClick={onClick} className={`p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-all ${checked ? "bg-[#f2f0eb] border-[#8c8680]" : "border-[#e6e2dc] bg-[#faf9f6]"}`}><div className={`w-4 h-4 rounded-full border flex items-center justify-center ${checked ? "border-[#8c8680]" : "border-gray-300"}`}>{checked && <div className="w-2 h-2 rounded-full bg-[#8c8680]"></div>}</div><div><div className="text-sm text-[#5e5a56]">{title}</div>{subtitle && <div className="text-[10px] text-[#a8a4a0]">{subtitle}</div>}</div></div>;
