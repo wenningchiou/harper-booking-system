@@ -1056,7 +1056,7 @@ const AdminDashboard = ({ onExit, isReady, db }) => {
   );
 };
 
-// --- 子元件：訂單卡片 (列表用 - 資訊全開版) ---
+// --- 子元件：訂單卡片 (列表用 - 含最晚完妝時間版) ---
 const OrderCard = ({ order, onClick, onDelete }) => {
   // 狀態標籤顏色設定
   const statusColors = {
@@ -1087,13 +1087,26 @@ const OrderCard = ({ order, onClick, onDelete }) => {
                   <h3 className="text-lg font-bold text-[#5e5a56]">{order.name}</h3>
                   <span className="text-xs text-[#a8a4a0]">({order.peopleCountFemale}女{order.peopleCountMale}男)</span>
               </div>
-              <div className="flex items-center gap-4 text-xs font-bold text-[#8c8680]">
+              
+              {/* 🔥 時間資訊列 */}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#8c8680]">
+                  {/* 日期 */}
                   <span className="flex items-center gap-1 bg-[#faf9f6] px-2 py-1 rounded border border-[#f2f0eb]">
-                      <Calendar size={12} /> {order.dates?.[0] || "未定日期"}
+                      <Calendar size={12} /> {order.dates?.[0] || "未定"}
                   </span>
+                  
+                  {/* 開始時間 (若已排定) */}
                   <span className="flex items-center gap-1 bg-[#faf9f6] px-2 py-1 rounded border border-[#f2f0eb]">
                       <Clock size={12} /> {order.confirmedTime || order.timeSlots?.[0] || "未定"}
                   </span>
+
+                  {/* 🔥 最晚完妝時間 (醒目顯示) */}
+                  {(order.finishTimeH && order.finishTimeM) && (
+                      <span className="flex items-center gap-1 bg-[#fff7ed] text-[#c2410c] px-2 py-1 rounded border border-[#ffedd5]">
+                          <span className="text-[10px] opacity-70">最晚</span>
+                          {order.finishTimeH}:{order.finishTimeM}
+                      </span>
+                  )}
               </div>
           </div>
 
@@ -1164,7 +1177,7 @@ const OrderCard = ({ order, onClick, onDelete }) => {
       </div>
   );
 };
-// --- 子元件：訂單詳情 Modal (複製文案含詳細報價明細版) ---
+// --- 子元件：訂單詳情 Modal (新增顯示最晚完妝時間) ---
 const OrderDetailModal = ({ order, onClose, db }) => {
   const [data, setData] = useState({ ...order });
   const [activeTab, setActiveTab] = useState(1);
@@ -1189,6 +1202,10 @@ const OrderDetailModal = ({ order, onClose, db }) => {
       initData.locationType = initData.locationType || "";
       initData.customUsage = initData.customUsage || "";
       if (initData.followUpHours === undefined) initData.followUpHours = 0;
+      
+      // 確保最晚完妝時間有值 (舊資料防呆)
+      initData.finishTimeH = initData.finishTimeH || "--";
+      initData.finishTimeM = initData.finishTimeM || "--";
 
       // 自動帶入地點邏輯
       const isStudioKH = initData.locationType.includes("巨蛋");
@@ -1283,37 +1300,19 @@ const OrderDetailModal = ({ order, onClose, db }) => {
       setShowCancelUI(false);
   };
 
-  // 🔥 複製文字 (含詳細報價明細)
   const copyConfirmText = () => {
-      // 1. 產生明細陣列
       let detailLines = [];
-      
-      // 方案
       Object.entries(data.quantities || {}).forEach(([id, qty]) => {
           const svc = SERVICE_CATALOG.find(s => s.id === id);
           if (svc) detailLines.push(`• ${svc.name} x${qty} ($${(svc.price * qty).toLocaleString()})`);
       });
-
-      // 跟妝
-      if (data.followUpHours > 0) {
-          detailLines.push(`• 跟妝服務 (${data.followUpHours}hr) ($${calcStats.followUpFee.toLocaleString()})`);
-      }
-
-      // 加購
-      (data.addOns || []).forEach(item => {
-          detailLines.push(`• 加購: ${item.name} ($${Number(item.price).toLocaleString()})`);
-      });
-
-      // 場地/車馬
+      if (data.followUpHours > 0) detailLines.push(`• 跟妝服務 (${data.followUpHours}hr) ($${calcStats.followUpFee.toLocaleString()})`);
+      (data.addOns || []).forEach(item => detailLines.push(`• 加購: ${item.name} ($${Number(item.price).toLocaleString()})`));
       if (data.venueFee > 0) detailLines.push(`• 場地費 ($${Number(data.venueFee).toLocaleString()})`);
       if (data.travelFee > 0) detailLines.push(`• 車馬費 ($${Number(data.travelFee).toLocaleString()})`);
-
-      // 折扣
       if (data.discount > 0) detailLines.push(`• 折扣 (-$${Number(data.discount).toLocaleString()})`);
 
-      // 2. 組合字串
-      const text = `那我這邊跟你確認一下方案唷❤️\n\n預約日期：${data.confirmedDate}\n\n地點：${data.city}\n${data.locationType}\n地址：${data.address || '待確認'}\n\n開妝時間：${data.confirmedTime}\n\n人數：女${data.peopleCountFemale} 男${data.peopleCountMale}\n\n方案：\n${data.serviceType}\n-\n\n明細\n${detailLines.join('\n')}\n------------------\n總計：$${calcStats.total.toLocaleString()}\n-\n訂金：$${calcStats.deposit.toLocaleString()}\n-\n\n➡️匯款資料：\n（822）中國信託\n026890039663\n\n訂金匯款完成後再麻煩告知我一聲唷！`;
-      
+      const text = `那我這邊跟你確認一下方案唷❤️\n\n預約日期：${data.confirmedDate}\n\n地點：${data.city}\n${data.locationType}\n地址：${data.address || '待確認'}\n\n開妝時間：${data.confirmedTime}\n\n人數：女${data.peopleCountFemale} 男${data.peopleCountMale}\n\n方案：\n${data.serviceType}\n-\n\n訂單報價明細\n${detailLines.join('\n')}\n------------------\n總計：$${calcStats.total.toLocaleString()}\n-\n訂金：$${calcStats.deposit.toLocaleString()}\n-\n\n➡️匯款資料：\n（822）中國信託\n026890039663\n\n訂金匯款完成後再麻煩告知我一聲唷！`;
       navigator.clipboard.writeText(text);
       alert("已複製方案確認文！");
   };
@@ -1458,9 +1457,17 @@ const OrderDetailModal = ({ order, onClose, db }) => {
                       </div>
                   )}
 
+                  {/* Tab 3: 檔期地點 (🔥 新增最晚完妝時間顯示) */}
                   {activeTab === 3 && (
                       <div className="space-y-4 animate-fade-in">
-                          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-xs text-[#8c6b5d] space-y-1"><span className="font-bold">客人首選：</span>{data.dates?.[0]} ｜ {data.timeSlots?.join("、")} <span className="block mt-1">客人勾選跟妝：{order.followUp || "無"}</span></div>
+                          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-xs text-[#8c6b5d] space-y-2">
+                              <div><span className="font-bold">📅 客人首選：</span>{data.dates?.[0]}</div>
+                              <div><span className="font-bold">⏰ 希望時段：</span>{data.timeSlots?.join("、")}</div>
+                              {/* 新增這行：最晚完妝時間 */}
+                              <div><span className="font-bold text-[#c2410c]">🎯 最晚完妝時間：{data.finishTimeH}:{data.finishTimeM}</span></div>
+                              <div><span className="font-bold">💄 跟妝需求：</span>{order.followUp || "無"}</div>
+                          </div>
+                          
                           <h3 className="text-sm font-bold text-[#8c8680] mt-2 uppercase tracking-wider">Schedule</h3>
                           <div className="bg-white p-5 rounded-xl border border-[#e6e2dc] space-y-4">
                               <InputGroup label="確定日期 (Date)" type="date" value={data.confirmedDate} onChange={e => setData({...data, confirmedDate: e.target.value})} />
