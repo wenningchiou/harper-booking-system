@@ -63,7 +63,7 @@ const USAGE_TYPES = [
 
 // --- 3. Firebase Config ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDUOtmKL_DDuLyefiDwwxVtlTeK1PwDEno",
+  apiKey: "AIzaSyAD0AhjOXBpZUry7o2cacMgyVqk3Kh6OFE",
   authDomain: "harpersmakeup-ee883.firebaseapp.com",
   projectId: "harpersmakeup-ee883",
   storageBucket: "harpersmakeup-ee883.firebasestorage.app",
