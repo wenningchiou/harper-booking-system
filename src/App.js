@@ -39,7 +39,7 @@ import {
 
 // --- 1. 服務方案資料庫 ---
 const SERVICE_CATALOG = [
-  { id: 'gen_single', name: '一般單妝容', price: 1500, type: 'female', category: 'standard', desc: '自然乾淨的氣色妝容。不含假睫毛、妝面飾品與髮型設計。' },
+  { id: 'gen_single', name: '一般單妝容', price: 1600, type: 'female', category: 'standard', desc: '自然乾淨的氣色妝容。不含假睫毛、妝面飾品與髮型設計。' },
   { id: 'gen_full', name: '一般妝髮方案', price: 2000, type: 'female', category: 'standard', desc: '自然乾淨的氣色妝容＋簡約髮型整理，適合日常聚會、證件照與面試。' },
   { id: 'exq_single', name: '精緻單妝容', price: 2000, type: 'female', category: 'standard', desc: '加強妝面細緻度與眼妝層次，妝感更完整。不含髮型設計。' },
   { id: 'exq_full', name: '精緻妝髮方案', price: 2500, type: 'female', category: 'standard', desc: '提升底妝細緻度、眼妝層次與整體持妝表現，妝感更上鏡、更精緻。' },
