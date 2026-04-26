@@ -909,49 +909,62 @@ const DURATION_RANGES = {
   family: [90, 90],         // 親友 1.5hr
 };
 
+// --- 修正後的 AdminDashboard ---
 const AdminDashboard = ({ onExit, isReady, db }) => {
   const [auth, setAuth] = useState(false);
   const [pass, setPass] = useState("");
-  const [rawOrders, setRawOrders] = useState([]); // 原始資料
+  const [rawOrders, setRawOrders] = useState([]);
   
-  // 篩選器狀態
-  const [filterType, setFilterType] = useState("pending"); // pending, processing, completed, cancelled
+  // ✅ 修正 1：將預設過濾器改為 "all"，這樣一進來才不會因為沒新訂單就顯得空空的
+  const [filterType, setFilterType] = useState("all"); 
   const [filterMonth, setFilterMonth] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 詳情頁狀態
-  const [selectedOrder, setSelectedOrder] = useState(null); // 當前選中的訂單 (物件)
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // 初始化資料監聽
   useEffect(() => {
     if (!auth || !isReady) return;
-    // 監聽所有訂單，依照建立時間排序
-    const q = query(collection(db, "public_appointments"), orderBy("createdAt", "desc"));
+
+    // ✅ 修正 2：如果訂單量不多，建議先不要在後台直接下 orderBy，改在前端排序更安全
+    // 這樣可以避免因為某一筆資料缺漏 createdAt 就導致整片空白的問題
+    const q = query(collection(db, "public_appointments")); 
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRawOrders(docs);
+      
+      // 在前端進行排序
+      const sortedDocs = docs.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      
+      setRawOrders(sortedDocs);
+      console.log("當前獲取的訂單總數：", sortedDocs.length); // 方便你除錯
+    }, (error) => {
+      console.error("Firebase 讀取失敗：", error);
     });
+
     return () => unsubscribe();
   }, [auth, isReady, db]);
-
-  // --- 邏輯處理 ---
 
   // 1. 訂單過濾邏輯
   const filteredOrders = useMemo(() => {
     return rawOrders.filter(order => {
-      // 狀態篩選 (若無 status 欄位，預設為 pending)
+      // 狀態篩選
       const currentStatus = order.status || "pending";
       if (filterType !== "all" && currentStatus !== filterType) return false;
 
-      // 月份篩選 (YYYY-MM) - 比對 dates[0]
+      // 月份篩選 (YYYY-MM)
       if (filterMonth && order.dates && order.dates[0] && !order.dates[0].startsWith(filterMonth)) return false;
 
       // 縣市篩選
       if (filterCity && order.city !== filterCity) return false;
 
-      // 關鍵字搜尋
+      // 關鍵字搜尋 (包含姓名、電話、IG、LINE)
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const text = `${order.name} ${order.phone} ${order.instagram} ${order.lineId || ''}`.toLowerCase();
@@ -961,6 +974,8 @@ const AdminDashboard = ({ onExit, isReady, db }) => {
       return true;
     });
   }, [rawOrders, filterType, filterMonth, filterCity, searchTerm]);
+
+  // ... (其餘 UI 代碼保持不變)
 
   // 2. 刪除訂單
   const deleteItem = async (id) => {
